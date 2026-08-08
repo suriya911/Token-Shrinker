@@ -1,0 +1,97 @@
+[
+  {
+    "name": "explicit override wins over broad scope",
+    "request": {
+      "explicitMode": "FAST",
+      "scope": "repository"
+    },
+    "expected": {
+      "mode": "FAST",
+      "budget": 4000,
+      "reasons": ["explicit_override"]
+    }
+  },
+  {
+    "name": "architecture selects deep",
+    "request": {
+      "operations": ["architecture"]
+    },
+    "expected": {
+      "mode": "DEEP",
+      "budget": 48000,
+      "reasons": ["broad_scope"]
+    }
+  },
+  {
+    "name": "repository scope selects deep",
+    "request": {
+      "scope": "repository"
+    },
+    "expected": {
+      "mode": "DEEP",
+      "budget": 48000,
+      "reasons": ["broad_scope"]
+    }
+  },
+  {
+    "name": "debug selects build",
+    "request": {
+      "operations": ["debug"]
+    },
+    "expected": {
+      "mode": "BUILD",
+      "budget": 16000,
+      "reasons": ["build_operation"]
+    }
+  },
+  {
+    "name": "named lookup selects fast",
+    "request": {
+      "operations": ["lookup"],
+      "scope": "named"
+    },
+    "expected": {
+      "mode": "FAST",
+      "budget": 4000,
+      "reasons": ["focused_lookup"]
+    }
+  },
+  {
+    "name": "ambiguous request defaults to build",
+    "request": {},
+    "expected": {
+      "mode": "BUILD",
+      "budget": 16000,
+      "reasons": ["ambiguous_default"]
+    }
+  },
+  {
+    "name": "request budget overrides mode default",
+    "request": {
+      "explicitMode": "DEEP",
+      "budgetOverride": 2048
+    },
+    "expected": {
+      "mode": "DEEP",
+      "budget": 2048,
+      "reasons": ["explicit_override", "budget_override"]
+    }
+  },
+  {
+    "name": "configured fixed mode precedes automatic rules",
+    "config": {
+      "defaultMode": "DEEP",
+      "fastBudget": 4000,
+      "buildBudget": 16000,
+      "deepBudget": 48000
+    },
+    "request": {
+      "operations": ["lookup"]
+    },
+    "expected": {
+      "mode": "DEEP",
+      "budget": 48000,
+      "reasons": ["configured_mode"]
+    }
+  }
+]

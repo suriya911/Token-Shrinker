@@ -9,6 +9,8 @@ rust-version = "1.97.1"
 license = "Apache-2.0"
 
 [workspace.dependencies]
+criterion = { version = "=0.8.2", default-features = false }
+serde = { version = "=1.0.229", features = ["derive"] }
 token-shrinker-types = { path = "crates/ts-types" }
 token-shrinker-config = { path = "crates/ts-config" }
 token-shrinker-router = { path = "crates/ts-router" }
@@ -23,6 +25,9 @@ token-shrinker-update = { path = "crates/ts-update" }
 token-shrinker-protocol = { path = "crates/ts-protocol" }
 token-shrinker-daemon = { path = "crates/ts-daemon" }
 token-shrinker-mcp = { path = "crates/ts-mcp" }
+
+[workspace.dependencies.serde_json]
+version = "=1.0.151"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
