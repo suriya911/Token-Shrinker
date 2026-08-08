@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 ignore.workspace = true
+serde.workspace = true
 sha2.workspace = true
 token-shrinker-context.workspace = true
 token-shrinker-types.workspace = true

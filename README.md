@@ -237,11 +237,11 @@ token-shrinker init
 token-shrinker doctor
 ```
 
-The npm package downloads a signed, platform-specific Rust binary during installation or dispatches to an optional platform package. Supported release targets are planned for:
+The npm launcher selects an exact-version optional platform package and never downloads or compiles an executable during installation or runtime. The continuously tested release targets are:
 
-- Windows x64 and arm64;
+- Windows x64;
 - macOS x64 and arm64;
-- Linux x64 and arm64, using glibc builds and a documented musl option.
+- Linux x64 using glibc.
 
 ### Cargo
 
@@ -253,15 +253,13 @@ token-shrinker init
 ### From source
 
 ```bash
-git clone https://github.com/OWNER/token-shrinker.git
+git clone https://github.com/suriya911/Token-Shrinker.git
 cd token-shrinker
 corepack enable
 pnpm install --frozen-lockfile
 cargo build --workspace
 pnpm build
 ```
-
-Replace `OWNER` after the project repository is created.
 
 ## Quick start
 
@@ -544,7 +542,7 @@ Recommended order for the core product: MCP Inspector and Criterion.rs first, th
 - [x] M1.1: Caveman profile engine with `full` default and scoped overrides
 - [x] M2: context builder/ranker, native repository provider, SQLite memory
 - [x] M3: execution engine, built-in compressors, telemetry, daemon/IPC
-- [ ] M4: MCP server, CLI, TypeScript SDK, npm native packaging, update manifest
+- [x] M4: MCP server, CLI, TypeScript SDK, npm native packaging, update manifest
 - [ ] M5: Claude Code, Codex CLI, Gemini CLI, OpenCode, and Aider adapters
 - [ ] M6: Graphify, Headroom, RTK, Claude-Mem/external MCP memory adapters
 - [ ] M7: VS Code extension, public demo, benchmark report, and security review

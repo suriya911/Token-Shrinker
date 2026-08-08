@@ -1,5 +1,6 @@
 //! Built-in deterministic context and terminal compressors plus raw artifact retention.
 
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet, VecDeque},
@@ -176,7 +177,8 @@ pub struct TerminalInput {
 }
 
 /// Unique actionable terminal line and repetition count.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TerminalEvidence {
     /// First exact occurrence.
     pub line: String,
@@ -185,7 +187,8 @@ pub struct TerminalEvidence {
 }
 
 /// Content-preserving bounded terminal summary.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TerminalSummary {
     /// Exact command array.
     pub command: Vec<String>,
@@ -326,7 +329,8 @@ fn has_file_line_reference(line: &str) -> bool {
 }
 
 /// Opaque identifier for one retained raw artifact.
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(transparent)]
 pub struct RawArtifactHandle(String);
 
 impl RawArtifactHandle {

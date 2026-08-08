@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://token-shrinker.dev/schemas/public-envelope-v1.json",
+  "title": "Token-Shrinker public result envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocolVersion", "requestId", "warnings", "data"],
+  "properties": {
+    "protocolVersion": { "const": "1.0" },
+    "requestId": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "data": { "type": "object" }
+  }
+}

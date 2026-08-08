@@ -11,9 +11,20 @@ name = "token-shrinker"
 path = "src/main.rs"
 
 [dependencies]
+ed25519-dalek.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
 token-shrinker-daemon.workspace = true
+token-shrinker-memory.workspace = true
 token-shrinker-mcp.workspace = true
+token-shrinker-output.workspace = true
 token-shrinker-protocol.workspace = true
+token-shrinker-types.workspace = true
+token-shrinker-update.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

@@ -531,6 +531,24 @@ impl DaemonHandle {
         }
         Ok(())
     }
+
+    /// Waits for a remote shutdown request and then removes discovery state.
+    ///
+    /// This is used by foreground daemon processes whose lifecycle is controlled through the
+    /// authenticated local transport.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DaemonError`] if the listener thread panics or discovery cleanup fails.
+    pub fn wait(mut self) -> Result<(), DaemonError> {
+        if let Some(thread) = self.thread.take() {
+            thread.join().map_err(|_| DaemonError::ServerThread)?;
+        }
+        if self.discovery_path.exists() {
+            fs::remove_file(&self.discovery_path).map_err(DaemonError::Io)?;
+        }
+        Ok(())
+    }
 }
 
 impl Drop for DaemonHandle {

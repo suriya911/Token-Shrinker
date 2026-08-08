@@ -1,0 +1,8 @@
+{
+  "name": "@token-shrinker/cli-linux-x64-gnu",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["bin"]
+}

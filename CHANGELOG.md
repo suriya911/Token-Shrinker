@@ -24,5 +24,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Streaming terminal and extractive context compressors with exact evidence, source ranges, omission ranges, and separately retained expiring raw artifacts.
 - Content-free pooled SQLite telemetry for requests, providers, comparable token accounting, artifact metadata, retention, deletion, and tokenizer-separated savings.
 - Authenticated local JSON-RPC framing, capability fallback health, bounded service concurrency, per-request cancellation, Unix sockets, Windows named pipes, discovery, locking, graceful drain, stale recovery, and rotating content-free logs.
+- MCP `2025-11-25` stdio lifecycle with nine annotated, schema-described tools and structured results shared with CLI and daemon IPC.
+- Native CLI lifecycle/context/execution/config/memory/output/update commands with stable JSON envelopes and generated reference documentation.
+- Typed TypeScript SDK clients for MCP stdio and authenticated daemon transports, including deadlines, cancellation, typed failures, discovery refresh, and native integration tests.
+- Downloader-free npm launcher and exact-version platform packages for Windows x64, Linux x64 glibc, and macOS x64/arm64, with signal forwarding, checksum helpers, and tarball-content verification.
+- Ed25519-authenticated, expiring, source-bound read-only update resolution with protocol compatibility, artifact digests, and owner-specific actions.
 - Apache License 2.0 and project governance documents.
 - Accepted architecture decision records 0001–0013, including a staged daemon, reason-only routing, separated raw artifacts, downloader-free alpha packaging, and read-only v1 update checks.

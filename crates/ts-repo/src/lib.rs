@@ -1,6 +1,7 @@
 //! Native repository scanning and optional graph providers.
 
 use ignore::WalkBuilder;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
@@ -34,7 +35,8 @@ pub struct RepositoryQuery {
 }
 
 /// Why a repository entry was not emitted as a context candidate.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ScanWarningKind {
     /// File exceeded the configured byte cap.
     TooLarge,
@@ -57,7 +59,8 @@ pub enum ScanWarningKind {
 }
 
 /// Non-fatal repository discovery warning.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScanWarning {
     /// Display path associated with the warning.
     pub path: String,
@@ -77,7 +80,8 @@ pub struct ScanResult {
 }
 
 /// Content-free native repository trace.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RepositoryTrace {
     /// Number of file entries inspected.
     pub visited_files: u64,

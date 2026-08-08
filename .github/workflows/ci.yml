@@ -50,3 +50,11 @@ jobs:
 
       - name: Run workspace checks
         run: pnpm check
+
+      - name: Build release binary
+        run: cargo build --release --bin token-shrinker
+
+      - name: Verify native release package
+        run: node scripts/verify-native-package.mjs
+        env:
+          TOKEN_SHRINKER_PROFILE: release

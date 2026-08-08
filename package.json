@@ -9,6 +9,7 @@
     "pnpm": ">=11 <12"
   },
   "devDependencies": {
+    "@types/node": "24.13.3",
     "typescript": "7.0.2"
   },
   "scripts": {
@@ -18,7 +19,10 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "check:fixture": "node scripts/verify-demo-fixture.mjs",
     "check:contracts": "node scripts/verify-m0-contracts.mjs",
+    "check:reference": "node scripts/generate-reference.mjs --check",
+    "check:protocol": "node scripts/generate-protocol.mjs --check",
     "check:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
-    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check:native": "node scripts/verify-native-package.mjs",
+    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm check:reference && pnpm check:protocol && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:native"
   }
 }
