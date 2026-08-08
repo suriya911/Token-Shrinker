@@ -1,0 +1,4 @@
+{
+  "activeWhen": "expiresAtMs > nowMs",
+  "boundary": "expired"
+}
