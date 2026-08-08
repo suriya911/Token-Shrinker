@@ -99,6 +99,7 @@ fn initialize() -> Result<Value, CliError> {
 }
 
 fn doctor() -> Value {
+    let native_transport = native_transport_diagnostics(|key| env::var(key).ok());
     match directories() {
         Ok(dirs) => json!({
             "healthy": true,
@@ -106,6 +107,7 @@ fn doctor() -> Value {
             "runtimeDirectory": dirs.runtime,
             "dataDirectory": dirs.data,
             "daemonDiscovered": read_discovery(&dirs.runtime).is_ok(),
+            "nativeTransport": native_transport,
             "fallbacks": {
                 "context": "native-repository",
                 "compression": "builtin-extractive",
@@ -116,6 +118,49 @@ fn doctor() -> Value {
             json!({"healthy": false, "code": "directory-resolution", "message": error.to_string()})
         }
     }
+}
+
+fn native_transport_diagnostics(get: impl Fn(&str) -> Option<String>) -> Value {
+    const ENDPOINT_KEYS: &[&str] = &[
+        "ANTHROPIC_BASE_URL",
+        "OPENAI_BASE_URL",
+        "GOOGLE_GEMINI_BASE_URL",
+        "GOOGLE_VERTEX_BASE_URL",
+    ];
+    let overrides = ENDPOINT_KEYS
+        .iter()
+        .filter(|key| get(key).is_some_and(|value| !value.trim().is_empty()))
+        .copied()
+        .collect::<Vec<_>>();
+    let wrapper = get("TOKEN_SHRINKER_BINARY").filter(|value| {
+        let name = Path::new(value)
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        matches!(
+            name.as_str(),
+            "claude" | "codex" | "gemini" | "opencode" | "opencode2" | "aider"
+        )
+    });
+    let safe = overrides.is_empty() && wrapper.is_none();
+    let warning_codes = overrides
+        .iter()
+        .map(|_| "provider-endpoint-override")
+        .chain(wrapper.iter().map(|_| "wrapper-recursion"))
+        .collect::<Vec<_>>();
+    json!({
+        "safe": safe,
+        "remoteControlEligible": !overrides.contains(&"ANTHROPIC_BASE_URL") && wrapper.is_none(),
+        "configuredEndpointOverrides": overrides,
+        "wrapperRecursionDetected": wrapper.is_some(),
+        "warningCodes": warning_codes,
+        "remediation": if safe {
+            Value::Null
+        } else {
+            json!("Remove unintended provider base-URL overrides or agent wrappers; Token-Shrinker adapters must use MCP tools while the agent keeps its native model transport. No setting was changed.")
+        }
+    })
 }
 
 fn start(args: &[String]) -> Result<String, CliError> {
@@ -652,5 +697,23 @@ mod tests {
         assert!(decode_hex_32(&"00".repeat(32)).is_ok());
         assert!(decode_hex_32("00").is_err());
         assert!(decode_hex_32(&"gg".repeat(32)).is_err());
+    }
+
+    #[test]
+    fn doctor_reports_transport_overrides_without_values_or_mutation() {
+        let values = std::collections::HashMap::from([
+            ("ANTHROPIC_BASE_URL", "https://proxy.invalid".to_owned()),
+            ("TOKEN_SHRINKER_BINARY", "claude.exe".to_owned()),
+        ]);
+        let report = native_transport_diagnostics(|key| values.get(key).cloned());
+        assert_eq!(report["safe"], false);
+        assert_eq!(report["remoteControlEligible"], false);
+        assert_eq!(
+            report["configuredEndpointOverrides"][0],
+            "ANTHROPIC_BASE_URL"
+        );
+        assert_eq!(report["wrapperRecursionDetected"], true);
+        assert!(!report.to_string().contains("proxy.invalid"));
+        assert_eq!(values["ANTHROPIC_BASE_URL"], "https://proxy.invalid");
     }
 }

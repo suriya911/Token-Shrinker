@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "platformConventions": {
+    "windows": "C:\\Program Files\\Token Shrinker\\token-shrinker.exe",
+    "macos": "/Applications/Token Shrinker/bin/token-shrinker",
+    "linux": "/opt/token shrinker/bin/token-shrinker"
+  },
+  "agents": {
+    "claude-code": {
+      "config": ".mcp.json",
+      "state": "existing-user-config",
+      "malformed": "{ nope",
+      "nativeTransport": "direct-anthropic",
+      "remoteControlEligible": true
+    },
+    "codex": {
+      "config": ".codex/config.toml",
+      "state": "existing-user-config",
+      "malformed": "broken = [\n",
+      "partial": "# >>> token-shrinker: owned adapter fragment >>>\n",
+      "nativeTransport": "direct-openai"
+    },
+    "gemini": {
+      "config": ".gemini/settings.json",
+      "state": "existing-user-config",
+      "malformed": "{ nope",
+      "nativeTransport": "direct-google"
+    },
+    "opencode": {
+      "config": "opencode.json",
+      "state": "existing-user-config",
+      "malformed": "{ nope",
+      "nativeTransport": "unchanged-provider"
+    },
+    "aider": {
+      "config": ".token-shrinker/aider.conf.yml",
+      "state": "owned-sidecar",
+      "malformed": "user-owned: true\n",
+      "nativeTransport": "unchanged-provider"
+    }
+  }
+}

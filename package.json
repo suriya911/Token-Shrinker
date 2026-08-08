@@ -15,14 +15,15 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
-    "lint": "pnpm -r --if-present lint",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm --filter @token-shrinker/sdk build && pnpm --filter @token-shrinker/adapter-core build && pnpm -r --if-present lint",
+    "typecheck": "pnpm --filter @token-shrinker/sdk build && pnpm --filter @token-shrinker/adapter-core build && pnpm -r --if-present typecheck",
     "check:fixture": "node scripts/verify-demo-fixture.mjs",
     "check:contracts": "node scripts/verify-m0-contracts.mjs",
     "check:reference": "node scripts/generate-reference.mjs --check",
     "check:protocol": "node scripts/generate-protocol.mjs --check",
+    "check:adapters": "node scripts/verify-adapters.mjs",
     "check:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
     "check:native": "node scripts/verify-native-package.mjs",
-    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm check:reference && pnpm check:protocol && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:native"
+    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm check:reference && pnpm check:protocol && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:adapters && pnpm check:native"
   }
 }

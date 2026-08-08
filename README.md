@@ -362,11 +362,11 @@ Every result includes `protocolVersion`, `requestId`, and structured warnings. C
 | Adapter | Target integration | Planned status |
 |---|---|---|
 | MCP stdio | any MCP-capable agent | first stable interface |
-| Claude Code | generated MCP/skill configuration | milestone 5 |
-| Codex CLI | generated MCP/skill configuration | milestone 5 |
-| Gemini CLI | generated MCP configuration/instructions | milestone 5 |
-| OpenCode | MCP/plugin configuration | milestone 5 |
-| Aider | CLI wrapper/context export | experimental milestone 5 |
+| Claude Code | generated MCP/skill configuration | M5 complete |
+| Codex CLI | generated MCP/skill configuration | M5 complete |
+| Gemini CLI | generated MCP configuration/instructions | M5 complete |
+| OpenCode | MCP/Agent Skill configuration | M5 complete |
+| Aider | explicit config/read-only context export | M5 experimental |
 | VS Code | commands, status, diagnostics, stats | milestone 6 |
 | JavaScript SDK | Node.js clients and future adapters | milestone 4 |
 
@@ -543,7 +543,7 @@ Recommended order for the core product: MCP Inspector and Criterion.rs first, th
 - [x] M2: context builder/ranker, native repository provider, SQLite memory
 - [x] M3: execution engine, built-in compressors, telemetry, daemon/IPC
 - [x] M4: MCP server, CLI, TypeScript SDK, npm native packaging, update manifest
-- [ ] M5: Claude Code, Codex CLI, Gemini CLI, OpenCode, and Aider adapters
+- [x] M5: Claude Code, Codex CLI, Gemini CLI, OpenCode, and Aider adapters
 - [ ] M6: Graphify, Headroom, RTK, Claude-Mem/external MCP memory adapters
 - [ ] M7: VS Code extension, public demo, benchmark report, and security review
 - [ ] M8: release candidates, compatibility freeze, and `v1.0.0`

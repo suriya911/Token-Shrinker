@@ -33,7 +33,11 @@ importers:
         specifier: workspace:*
         version: link:../adapter-core
 
-  packages/adapter-core: {}
+  packages/adapter-core:
+    dependencies:
+      '@token-shrinker/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
   packages/adapter-gemini:
     dependencies:

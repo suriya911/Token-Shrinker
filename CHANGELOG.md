@@ -29,5 +29,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Typed TypeScript SDK clients for MCP stdio and authenticated daemon transports, including deadlines, cancellation, typed failures, discovery refresh, and native integration tests.
 - Downloader-free npm launcher and exact-version platform packages for Windows x64, Linux x64 glibc, and macOS x64/arm64, with signal forwarding, checksum helpers, and tarball-content verification.
 - Ed25519-authenticated, expiring, source-bound read-only update resolution with protocol compatibility, artifact digests, and owner-specific actions.
+- Transactional, ownership-scoped Claude Code, Codex, Gemini CLI, OpenCode, and Aider adapters with portable skills, native-transport diagnostics, and live MCP validation.
 - Apache License 2.0 and project governance documents.
 - Accepted architecture decision records 0001–0013, including a staged daemon, reason-only routing, separated raw artifacts, downloader-free alpha packaging, and read-only v1 update checks.
