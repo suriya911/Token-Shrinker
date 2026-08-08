@@ -541,7 +541,7 @@ Recommended order for the core product: MCP Inspector and Criterion.rs first, th
 
 - [ ] M0: repository, governance, schemas, fixtures, and CI skeleton
 - [x] M1: Rust core contracts, deterministic router, token estimation
-- [ ] M1.1: Caveman profile engine with `full` default and scoped overrides
+- [x] M1.1: Caveman profile engine with `full` default and scoped overrides
 - [ ] M2: context builder/ranker, native repository provider, SQLite memory
 - [ ] M3: execution engine, built-in compressors, telemetry, daemon/IPC
 - [ ] M4: MCP server, CLI, TypeScript SDK, npm native packaging, update manifest

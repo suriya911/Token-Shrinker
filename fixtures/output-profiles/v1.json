@@ -1,0 +1,137 @@
+[
+  {
+    "name": "request override wins",
+    "config": {
+      "defaultMode": "full",
+      "agents": { "codex": "lite" },
+      "tools": { "router": "ultra" }
+    },
+    "request": {
+      "agent": "codex",
+      "tool": "router",
+      "sessionMode": "wenyan-lite",
+      "requestMode": "off"
+    },
+    "expected": {
+      "configuredMode": "off",
+      "effectiveMode": "off",
+      "source": "request",
+      "bypass": null,
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "session override wins over tool and agent",
+    "config": {
+      "defaultMode": "full",
+      "agents": { "codex": "lite" },
+      "tools": { "router": "ultra" }
+    },
+    "request": {
+      "agent": "codex",
+      "tool": "router",
+      "sessionMode": "wenyan-full"
+    },
+    "expected": {
+      "configuredMode": "wenyan-full",
+      "effectiveMode": "wenyan-full",
+      "source": "session",
+      "bypass": null,
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "tool override wins over agent",
+    "config": {
+      "defaultMode": "full",
+      "agents": { "codex": "lite" },
+      "tools": { "router": "ultra" }
+    },
+    "request": {
+      "agent": "codex",
+      "tool": "router"
+    },
+    "expected": {
+      "configuredMode": "ultra",
+      "effectiveMode": "ultra",
+      "source": "tool",
+      "bypass": null,
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "agent override wins over global",
+    "config": {
+      "defaultMode": "full",
+      "agents": { "codex": "lite" }
+    },
+    "request": { "agent": "codex" },
+    "expected": {
+      "configuredMode": "lite",
+      "effectiveMode": "lite",
+      "source": "agent",
+      "bypass": null,
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "global default is final fallback",
+    "config": { "defaultMode": "full" },
+    "request": {},
+    "expected": {
+      "configuredMode": "full",
+      "effectiveMode": "full",
+      "source": "global",
+      "bypass": null,
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "security warning escalates English clarity",
+    "config": { "defaultMode": "ultra", "autoClarity": true },
+    "request": { "clarity": "security_warning" },
+    "expected": {
+      "configuredMode": "ultra",
+      "effectiveMode": "lite",
+      "source": "global",
+      "bypass": null,
+      "clarityTrigger": "security_warning"
+    }
+  },
+  {
+    "name": "ordered recovery preserves Wenyan language family",
+    "config": { "defaultMode": "wenyan-ultra", "autoClarity": true },
+    "request": { "clarity": "ordered_recovery" },
+    "expected": {
+      "configuredMode": "wenyan-ultra",
+      "effectiveMode": "wenyan-lite",
+      "source": "global",
+      "bypass": null,
+      "clarityTrigger": "ordered_recovery"
+    }
+  },
+  {
+    "name": "machine payload bypasses formatter",
+    "config": { "defaultMode": "ultra" },
+    "request": { "payloadKind": "machine_readable" },
+    "expected": {
+      "configuredMode": "ultra",
+      "effectiveMode": "off",
+      "source": "global",
+      "bypass": "machine_readable",
+      "clarityTrigger": null
+    }
+  },
+  {
+    "name": "source code bypasses formatter",
+    "config": { "defaultMode": "full" },
+    "request": { "payloadKind": "source_code" },
+    "expected": {
+      "configuredMode": "full",
+      "effectiveMode": "off",
+      "source": "global",
+      "bypass": "source_code",
+      "clarityTrigger": null
+    }
+  }
+]
