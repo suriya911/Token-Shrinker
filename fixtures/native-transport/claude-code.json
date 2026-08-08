@@ -1,0 +1,23 @@
+{
+  "agent": "claude-code",
+  "integration": "mcp-stdio",
+  "before": {
+    "ANTHROPIC_BASE_URL": null,
+    "ANTHROPIC_API_KEY": null,
+    "modelTransport": "native"
+  },
+  "after": {
+    "ANTHROPIC_BASE_URL": null,
+    "ANTHROPIC_API_KEY": null,
+    "modelTransport": "native"
+  },
+  "forbiddenMutations": [
+    "ANTHROPIC_BASE_URL",
+    "ANTHROPIC_API_KEY"
+  ],
+  "expected": {
+    "transportUnchanged": true,
+    "remoteControlEligible": true
+  }
+}
+

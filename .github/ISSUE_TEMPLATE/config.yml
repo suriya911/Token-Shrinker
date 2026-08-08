@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/suriya911/Token-Shrinker/security/advisories/new
+    about: Report security problems privately instead of opening an issue.
+

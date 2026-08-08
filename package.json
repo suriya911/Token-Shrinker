@@ -17,7 +17,8 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "check:fixture": "node scripts/verify-demo-fixture.mjs",
+    "check:contracts": "node scripts/verify-m0-contracts.mjs",
     "check:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets --all-features -- -D warnings && cargo test --workspace",
-    "check": "pnpm check:rust && pnpm check:fixture && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   }
 }

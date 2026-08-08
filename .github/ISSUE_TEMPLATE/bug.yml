@@ -1,0 +1,43 @@
+name: Bug report
+description: Report reproducible incorrect behavior.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, private source, prompts, or security vulnerabilities.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: What happened, including the shortest decisive error.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide minimal deterministic steps and a synthetic fixture when possible.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Token-Shrinker version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Rust, Node.js, pnpm, agent, and active providers.
+    validations:
+      required: true
+

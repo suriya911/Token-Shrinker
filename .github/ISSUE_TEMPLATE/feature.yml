@@ -1,0 +1,39 @@
+name: Feature proposal
+description: Propose behavior that fits the accepted architecture.
+title: "proposal: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user problem without prescribing implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: State observable behavior and how success can be measured.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and risks
+      description: Cover privacy, security, compatibility, provenance, and fallback behavior.
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Architecture checks
+      options:
+        - label: This does not require a hosted service for baseline behavior.
+          required: true
+        - label: This does not replace an agent's native model transport.
+          required: true
+        - label: Optional-provider failure has a safe built-in fallback.
+          required: true
+
