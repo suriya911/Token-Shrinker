@@ -2,10 +2,11 @@
 /** Thin, downloader-free launcher for platform-specific native packages. */
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 const require = createRequire(import.meta.url);
@@ -70,7 +71,7 @@ export async function launch(args = process.argv.slice(2)): Promise<number> {
 }
 
 const invokedPath = process.argv[1];
-if (invokedPath && import.meta.url === pathToFileURL(invokedPath).href) {
+if (invokedPath && realpathSync(invokedPath) === realpathSync(fileURLToPath(import.meta.url))) {
   launch().then((code) => { process.exitCode = code; }).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
