@@ -10,7 +10,13 @@ license = "Apache-2.0"
 
 [workspace.dependencies]
 criterion = { version = "=0.8.2", default-features = false }
+ignore = "=0.4.33"
+r2d2 = "=0.8.10"
+r2d2_sqlite = "=0.35.0"
+rusqlite = { version = "=0.40.1", features = ["bundled"] }
 serde = { version = "=1.0.229", features = ["derive"] }
+sha2 = "=0.11.0"
+tempfile = "=3.27.0"
 token-shrinker-types = { path = "crates/ts-types" }
 token-shrinker-config = { path = "crates/ts-config" }
 token-shrinker-router = { path = "crates/ts-router" }

@@ -1,0 +1,44 @@
+{
+  "budget": 9,
+  "candidates": [
+    {
+      "sourceId": "repo:duplicate-low.rs",
+      "sourceKind": "repository_file",
+      "location": { "uri": "duplicate-low.rs", "startLine": null, "endLine": null },
+      "content": "same",
+      "contentHash": "0967115f2813a3541eaef77de9d9d5773f1c0c04314b0bbfe4ff3b3b1c55b5d5",
+      "modifiedUnixMs": null,
+      "relevance": {}
+    },
+    {
+      "sourceId": "repo:duplicate-high.rs",
+      "sourceKind": "repository_file",
+      "location": { "uri": "duplicate-high.rs", "startLine": null, "endLine": null },
+      "content": "same",
+      "contentHash": "0967115f2813a3541eaef77de9d9d5773f1c0c04314b0bbfe4ff3b3b1c55b5d5",
+      "modifiedUnixMs": null,
+      "relevance": { "exactMatch": true }
+    },
+    {
+      "sourceId": "repo:diagnostic.rs",
+      "sourceKind": "repository_file",
+      "location": { "uri": "diagnostic.rs", "startLine": null, "endLine": null },
+      "content": "error",
+      "contentHash": "ca00fccfb408989eddc401062c4d1219a6aceb6b9b55412357f1790862e8f178",
+      "modifiedUnixMs": null,
+      "relevance": { "diagnostic": true }
+    },
+    {
+      "sourceId": "repo:too-large.rs",
+      "sourceKind": "repository_file",
+      "location": { "uri": "too-large.rs", "startLine": null, "endLine": null },
+      "content": "this does not fit",
+      "contentHash": "95a695e18ef4708be5cd08d41605febd42ab0f68e500fd4072e33ed564b2a79d",
+      "modifiedUnixMs": null,
+      "relevance": { "pathMatch": true }
+    }
+  ],
+  "expectedSelected": ["repo:diagnostic.rs", "repo:duplicate-high.rs"],
+  "expectedOmitted": ["repo:duplicate-low.rs", "repo:too-large.rs"],
+  "expectedUsed": 9
+}

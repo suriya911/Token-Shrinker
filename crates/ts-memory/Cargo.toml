@@ -7,8 +7,15 @@ license.workspace = true
 publish = false
 
 [dependencies]
+r2d2.workspace = true
+r2d2_sqlite.workspace = true
+rusqlite.workspace = true
+sha2.workspace = true
 token-shrinker-context.workspace = true
 token-shrinker-types.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true
