@@ -9,6 +9,7 @@
 
 # Logs and local environment
 *.log
+!fixtures/demo-repo/logs/noisy-test-output.log
 .env
 .env.*
 !.env.example

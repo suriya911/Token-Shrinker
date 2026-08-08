@@ -1,0 +1,26 @@
+[build] resolving workspace
+[build] compiling auth module
+[build] compiling auth module
+[build] compiling auth module
+[build] compiling billing module
+[build] compiling notifications module
+[test] running session tests
+[progress] 10%
+[progress] 20%
+[progress] 30%
+[progress] 40%
+[progress] 50%
+[progress] 60%
+[progress] 70%
+[progress] 80%
+[progress] 90%
+[progress] 100%
+not ok 1 - session expiring now is rejected
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+true !== false
+
+    at TestContext.<anonymous> (tests/session.test.mjs:10:10)
+tests 1
+pass 0
+fail 1
