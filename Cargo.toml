@@ -8,6 +8,22 @@ edition = "2024"
 rust-version = "1.97.1"
 license = "Apache-2.0"
 
+[workspace.dependencies]
+token-shrinker-types = { path = "crates/ts-types" }
+token-shrinker-config = { path = "crates/ts-config" }
+token-shrinker-router = { path = "crates/ts-router" }
+token-shrinker-context = { path = "crates/ts-context" }
+token-shrinker-memory = { path = "crates/ts-memory" }
+token-shrinker-repo = { path = "crates/ts-repo" }
+token-shrinker-compress = { path = "crates/ts-compress" }
+token-shrinker-output = { path = "crates/ts-output" }
+token-shrinker-exec = { path = "crates/ts-exec" }
+token-shrinker-telemetry = { path = "crates/ts-telemetry" }
+token-shrinker-update = { path = "crates/ts-update" }
+token-shrinker-protocol = { path = "crates/ts-protocol" }
+token-shrinker-daemon = { path = "crates/ts-daemon" }
+token-shrinker-mcp = { path = "crates/ts-mcp" }
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 

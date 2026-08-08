@@ -3,5 +3,122 @@
 version = 4
 
 [[package]]
+name = "token-shrinker-cli"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-daemon",
+ "token-shrinker-mcp",
+ "token-shrinker-protocol",
+]
+
+[[package]]
+name = "token-shrinker-compress"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-config"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-context"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-daemon"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-compress",
+ "token-shrinker-config",
+ "token-shrinker-context",
+ "token-shrinker-exec",
+ "token-shrinker-memory",
+ "token-shrinker-output",
+ "token-shrinker-protocol",
+ "token-shrinker-repo",
+ "token-shrinker-router",
+ "token-shrinker-telemetry",
+ "token-shrinker-types",
+ "token-shrinker-update",
+]
+
+[[package]]
+name = "token-shrinker-exec"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-compress",
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-mcp"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-daemon",
+ "token-shrinker-protocol",
+]
+
+[[package]]
+name = "token-shrinker-memory"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-context",
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-output"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-protocol"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-repo"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-context",
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-router"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
+name = "token-shrinker-telemetry"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-types",
+]
+
+[[package]]
 name = "token-shrinker-types"
 version = "0.0.0"
+
+[[package]]
+name = "token-shrinker-update"
+version = "0.0.0"
+dependencies = [
+ "token-shrinker-config",
+ "token-shrinker-protocol",
+ "token-shrinker-types",
+]

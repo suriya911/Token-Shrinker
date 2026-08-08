@@ -8,6 +8,9 @@
     "node": ">=24 <25",
     "pnpm": ">=11 <12"
   },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  },
   "scripts": {
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",

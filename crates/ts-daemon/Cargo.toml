@@ -1,0 +1,24 @@
+[package]
+name = "token-shrinker-daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+token-shrinker-compress.workspace = true
+token-shrinker-config.workspace = true
+token-shrinker-context.workspace = true
+token-shrinker-exec.workspace = true
+token-shrinker-memory.workspace = true
+token-shrinker-output.workspace = true
+token-shrinker-protocol.workspace = true
+token-shrinker-repo.workspace = true
+token-shrinker-router.workspace = true
+token-shrinker-telemetry.workspace = true
+token-shrinker-types.workspace = true
+token-shrinker-update.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "token-shrinker-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "token-shrinker"
+path = "src/main.rs"
+
+[dependencies]
+token-shrinker-daemon.workspace = true
+token-shrinker-mcp.workspace = true
+token-shrinker-protocol.workspace = true
+
+[lints]
+workspace = true
