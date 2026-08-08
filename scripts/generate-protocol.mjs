@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import process from "node:process";
 
-const binary = process.env.TOKEN_SHRINKER_BINARY ??
-  resolve("target", "debug", process.platform === "win32" ? "token-shrinker.exe" : "token-shrinker");
-const versionRun = spawnSync(binary, ["version", "--json"], { encoding: "utf8" });
-const referenceRun = spawnSync(binary, ["reference", "--json"], { encoding: "utf8" });
+const binary = process.env.TOKEN_SHRINKER_BINARY;
+const runNative = (args) => binary
+  ? spawnSync(binary, args, { encoding: "utf8" })
+  : spawnSync("cargo", ["run", "--quiet", "--bin", "token-shrinker", "--", ...args], {
+      encoding: "utf8",
+    });
+const versionRun = runNative(["version", "--json"]);
+const referenceRun = runNative(["reference", "--json"]);
 assert.equal(versionRun.status, 0, versionRun.stderr);
 assert.equal(referenceRun.status, 0, referenceRun.stderr);
 const version = JSON.parse(versionRun.stdout);
