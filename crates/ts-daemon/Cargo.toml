@@ -7,6 +7,11 @@ license.workspace = true
 publish = false
 
 [dependencies]
+fs4.workspace = true
+getrandom.workspace = true
+interprocess.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 token-shrinker-compress.workspace = true
 token-shrinker-config.workspace = true
 token-shrinker-context.workspace = true
@@ -19,6 +24,12 @@ token-shrinker-router.workspace = true
 token-shrinker-telemetry.workspace = true
 token-shrinker-types.workspace = true
 token-shrinker-update.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+widestring.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

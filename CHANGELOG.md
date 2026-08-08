@@ -20,5 +20,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Root-confined repository discovery with ignore/generated-file policy, bounded reads, text/path search, optional symbol enrichment, secret redaction, cancellation, and content-hash caching.
 - Migrated SQLite memory storage with pooled concurrent access, FTS5/fallback search, scoped CRUD, retention, deletion, and integrity checks.
 - A native repository-to-context baseline demo that requires no optional providers or external search tools.
+- Policy-gated argument-array execution with canonical working roots, environment controls, deadlines, cancellation, process-tree termination, exit propagation, and bounded head/tail capture.
+- Streaming terminal and extractive context compressors with exact evidence, source ranges, omission ranges, and separately retained expiring raw artifacts.
+- Content-free pooled SQLite telemetry for requests, providers, comparable token accounting, artifact metadata, retention, deletion, and tokenizer-separated savings.
+- Authenticated local JSON-RPC framing, capability fallback health, bounded service concurrency, per-request cancellation, Unix sockets, Windows named pipes, discovery, locking, graceful drain, stale recovery, and rotating content-free logs.
 - Apache License 2.0 and project governance documents.
 - Accepted architecture decision records 0001–0013, including a staged daemon, reason-only routing, separated raw artifacts, downloader-free alpha packaging, and read-only v1 update checks.

@@ -254,6 +254,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "doctest-file"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2db04e74f0a9a93103b50e90b96024c9b2bdca8bce6a632ec71b88736d3d359"
+
+[[package]]
 name = "either"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -298,6 +304,16 @@ name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
+name = "fs4"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e72ed92b67c146290f88e9c89d60ca163ea417a446f61ffd7b72df3e7f1dfd5"
+dependencies = [
+ "rustix",
+ "windows-sys",
+]
 
 [[package]]
 name = "futures-core"
@@ -409,6 +425,19 @@ dependencies = [
  "same-file",
  "walkdir",
  "winapi-util",
+]
+
+[[package]]
+name = "interprocess"
+version = "2.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "798de1433ba514cc6c04c4144c2469af81396e4906195218737c776d47769572"
+dependencies = [
+ "doctest-file",
+ "libc",
+ "recvmsg",
+ "widestring",
+ "windows-sys",
 ]
 
 [[package]]
@@ -609,6 +638,12 @@ name = "rand_core"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+
+[[package]]
+name = "recvmsg"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3edd4d5d42c92f0a659926464d4cce56b562761267ecf0f469d85b7de384175"
 
 [[package]]
 name = "redox_syscall"
@@ -878,6 +913,9 @@ dependencies = [
 name = "token-shrinker-compress"
 version = "0.0.0"
 dependencies = [
+ "sha2",
+ "tempfile",
+ "token-shrinker-context",
  "token-shrinker-types",
 ]
 
@@ -903,6 +941,12 @@ dependencies = [
 name = "token-shrinker-daemon"
 version = "0.0.0"
 dependencies = [
+ "fs4",
+ "getrandom",
+ "interprocess",
+ "serde",
+ "serde_json",
+ "tempfile",
  "token-shrinker-compress",
  "token-shrinker-config",
  "token-shrinker-context",
@@ -915,12 +959,14 @@ dependencies = [
  "token-shrinker-telemetry",
  "token-shrinker-types",
  "token-shrinker-update",
+ "widestring",
 ]
 
 [[package]]
 name = "token-shrinker-exec"
 version = "0.0.0"
 dependencies = [
+ "tempfile",
  "token-shrinker-compress",
  "token-shrinker-types",
 ]
@@ -959,6 +1005,8 @@ dependencies = [
 name = "token-shrinker-protocol"
 version = "0.0.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "token-shrinker-types",
 ]
 
@@ -987,6 +1035,10 @@ dependencies = [
 name = "token-shrinker-telemetry"
 version = "0.0.0"
 dependencies = [
+ "r2d2",
+ "r2d2_sqlite",
+ "rusqlite",
+ "tempfile",
  "token-shrinker-types",
 ]
 
@@ -1090,6 +1142,12 @@ checksum = "7ef64dbcc55df09c7e5a46182d181c2cfa3e925f3da937ea764728b4bbb9dcbf"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "widestring"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72069c3113ab32ab29e5584db3c6ec55d416895e60715417b5b883a357c3e471"
 
 [[package]]
 name = "winapi"

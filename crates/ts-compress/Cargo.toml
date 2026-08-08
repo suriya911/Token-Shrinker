@@ -7,7 +7,12 @@ license.workspace = true
 publish = false
 
 [dependencies]
+sha2.workspace = true
+token-shrinker-context.workspace = true
 token-shrinker-types.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true
