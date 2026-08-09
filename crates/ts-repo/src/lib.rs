@@ -1,6 +1,7 @@
 //! Native repository scanning and optional graph providers.
 
 use ignore::WalkBuilder;
+use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -17,6 +18,10 @@ use token_shrinker_context::{
     ContentHash, ContextCandidate, ContextProvider, ContextQuery, RelevanceSignals, Sensitivity,
     SourceId, SourceKind, SourceLocation,
 };
+use token_shrinker_provider::{
+    ManagedProcess, ProviderError, ProviderLimits, ProviderOutcome, ProviderSpec,
+    resolve_with_fallback,
+};
 
 /// Default maximum size of one repository text source.
 pub const DEFAULT_MAX_FILE_BYTES: u64 = 1_048_576;
@@ -24,6 +29,147 @@ pub const DEFAULT_MAX_FILE_BYTES: u64 = 1_048_576;
 pub const DEFAULT_MAX_FILES: usize = 10_000;
 /// Default maximum retained text across one scan.
 pub const DEFAULT_MAX_TOTAL_BYTES: u64 = 67_108_864;
+
+/// Graphify versions covered by the adapter contract tests.
+pub const GRAPHIFY_VERSION_REQUIREMENT: &str = ">=0.9.0, <0.10.0";
+
+/// Optional Graphify context adapter. Query text crosses the local process boundary.
+#[derive(Clone, Debug)]
+pub struct GraphifyProvider {
+    process: ManagedProcess,
+    graph: PathBuf,
+    budget: u64,
+    cache: Arc<Mutex<BTreeMap<SourceId, ContextCandidate>>>,
+}
+
+impl GraphifyProvider {
+    /// Creates an adapter for a Graphify graph file.
+    #[must_use]
+    pub fn new(command: PathBuf, graph: PathBuf, required: bool) -> Self {
+        let spec = ProviderSpec {
+            id: "graphify".to_owned(),
+            command,
+            base_args: Vec::new(),
+            environment: BTreeMap::new(),
+            version_requirement: VersionReq::parse(GRAPHIFY_VERSION_REQUIREMENT)
+                .unwrap_or(VersionReq::STAR),
+            required,
+            limits: ProviderLimits::default(),
+        };
+        Self::from_spec(spec, graph)
+    }
+
+    /// Creates an adapter from an advanced provider specification.
+    #[must_use]
+    pub fn from_spec(spec: ProviderSpec, graph: PathBuf) -> Self {
+        Self {
+            process: ManagedProcess::new(spec),
+            graph,
+            budget: 4_000,
+            cache: Arc::new(Mutex::new(BTreeMap::new())),
+        }
+    }
+
+    /// Verifies executable availability and supported version.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider probe or compatibility error.
+    pub fn probe(&self) -> Result<String, ProviderError> {
+        self.process
+            .probe(&["--version".to_owned()])
+            .map(|version| version.to_string())
+    }
+
+    /// Overrides the maximum Graphify query budget.
+    #[must_use]
+    pub const fn with_budget(mut self, budget: u64) -> Self {
+        self.budget = budget;
+        self
+    }
+
+    /// Queries Graphify or returns native repository candidates for this request.
+    ///
+    /// # Errors
+    ///
+    /// Returns the classified Graphify failure when the provider is required.
+    pub fn candidates_or_fallback(
+        &self,
+        query: &ContextQuery,
+        fallback: impl FnOnce() -> Vec<ContextCandidate>,
+    ) -> Result<ProviderOutcome<Vec<ContextCandidate>>, ProviderError> {
+        resolve_with_fallback(
+            self.process.spec(),
+            self.candidates(query),
+            "native-repository",
+            fallback,
+        )
+    }
+}
+
+impl ContextProvider for GraphifyProvider {
+    type Error = ProviderError;
+
+    fn candidates(&self, query: &ContextQuery) -> Result<Vec<ContextCandidate>, Self::Error> {
+        let question = query
+            .terms
+            .iter()
+            .chain(&query.path_hints)
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join(" ");
+        if question.trim().is_empty() {
+            return Err(ProviderError::Malformed);
+        }
+        let args = vec![
+            "query".to_owned(),
+            question,
+            "--budget".to_owned(),
+            self.budget.to_string(),
+            "--graph".to_owned(),
+            self.graph.to_string_lossy().into_owned(),
+        ];
+        let output = self.process.invoke(&args, &[])?;
+        let content = String::from_utf8(output.stdout).map_err(|_| ProviderError::Malformed)?;
+        if content.trim().is_empty() {
+            return Err(ProviderError::Malformed);
+        }
+        let digest = hash_content(content.as_bytes());
+        let source_id = SourceId::new(format!("graphify:{}", &digest.as_str()[..16]))
+            .map_err(|_| ProviderError::Malformed)?;
+        let candidate = ContextCandidate {
+            source_id: source_id.clone(),
+            source_kind: SourceKind::RepositoryGraph,
+            location: SourceLocation {
+                uri: format!("graphify:query?graph={}", self.graph.to_string_lossy()),
+                start_line: None,
+                end_line: None,
+            },
+            content_hash: digest,
+            sensitivity: Sensitivity::Private,
+            content,
+            modified_unix_ms: None,
+            relevance: RelevanceSignals {
+                exact_match: true,
+                ..RelevanceSignals::default()
+            },
+        };
+        self.cache
+            .lock()
+            .map_err(|_| ProviderError::Crashed)?
+            .insert(source_id, candidate.clone());
+        Ok(vec![candidate])
+    }
+
+    fn fetch(&self, source_id: &SourceId) -> Result<ContextCandidate, Self::Error> {
+        self.cache
+            .lock()
+            .map_err(|_| ProviderError::Crashed)?
+            .get(source_id)
+            .cloned()
+            .ok_or(ProviderError::Unavailable)
+    }
+}
 
 /// Query hints used to add deterministic relevance signals during discovery.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -907,6 +1053,53 @@ fn display_path(path: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn graphify_contract_normalizes_private_graph_context() {
+        let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("ts-provider")
+            .join("tests/fixtures/fake_provider.py");
+        let provider = GraphifyProvider::from_spec(
+            ProviderSpec {
+                id: "graphify".to_owned(),
+                command: PathBuf::from("python"),
+                base_args: vec![script.to_string_lossy().into_owned(), "graphify".to_owned()],
+                environment: BTreeMap::new(),
+                version_requirement: VersionReq::STAR,
+                required: false,
+                limits: ProviderLimits::default(),
+            },
+            PathBuf::from("graph.json"),
+        );
+        let candidates = provider
+            .candidates(&ContextQuery {
+                terms: vec!["architecture".to_owned()],
+                path_hints: Vec::new(),
+            })
+            .expect("graph candidates");
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].source_kind, SourceKind::RepositoryGraph);
+        assert_eq!(candidates[0].sensitivity, Sensitivity::Private);
+        assert_eq!(
+            provider.fetch(&candidates[0].source_id),
+            Ok(candidates[0].clone())
+        );
+    }
+
+    #[test]
+    #[ignore = "requires a locally installed Graphify executable"]
+    fn live_graphify_probe() {
+        assert!(
+            GraphifyProvider::new(
+                PathBuf::from("graphify"),
+                PathBuf::from("graphify-out/graph.json"),
+                false,
+            )
+            .probe()
+            .is_ok()
+        );
+    }
 
     #[test]
     fn scan_respects_ignores_limits_binary_policy_and_order() {

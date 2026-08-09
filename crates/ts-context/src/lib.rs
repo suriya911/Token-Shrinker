@@ -240,6 +240,8 @@ pub enum SourceKind {
     RepositoryFile,
     /// Definition snippet derived from an admitted repository file.
     RepositorySymbol,
+    /// Context returned by an optional repository graph provider.
+    RepositoryGraph,
     /// Record returned by the local memory provider.
     Memory,
 }

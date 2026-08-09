@@ -19,6 +19,7 @@ use token_shrinker_mcp::{PUBLIC_SCHEMA_VERSION, PublicHandler, serve_stdio, tool
 use token_shrinker_memory::{MemoryScope, MemoryStore};
 use token_shrinker_output::{OutputMode, ProfileConfig};
 use token_shrinker_protocol::RpcRequest;
+use token_shrinker_provider::{ManagedProcess, ProviderLimits, ProviderSpec};
 use token_shrinker_types::{ProtocolVersion, RequestId};
 use token_shrinker_update::{UpdateQuery, check_update};
 
@@ -108,6 +109,12 @@ fn doctor() -> Value {
             "dataDirectory": dirs.data,
             "daemonDiscovered": read_discovery(&dirs.runtime).is_ok(),
             "nativeTransport": native_transport,
+            "optionalProviders": [
+                probe_optional_provider("graphify", ">=0.9.0, <0.10.0", "query and repository graph cross a local process boundary"),
+                probe_optional_provider("headroom", ">=0.22.0, <1.0.0", "context crosses a local MCP process boundary"),
+                probe_optional_provider("rtk", ">=0.45.0, <1.0.0", "terminal output crosses a local process boundary"),
+                probe_optional_provider("claude-mem", ">=13.0.0, <14.0.0", "memory query crosses the configured MCP process boundary")
+            ],
             "fallbacks": {
                 "context": "native-repository",
                 "compression": "builtin-extractive",
@@ -117,6 +124,44 @@ fn doctor() -> Value {
         Err(error) => {
             json!({"healthy": false, "code": "directory-resolution", "message": error.to_string()})
         }
+    }
+}
+
+fn probe_optional_provider(command: &str, requirement: &str, data_boundary: &str) -> Value {
+    let limits = ProviderLimits {
+        startup_timeout: Duration::from_secs(2),
+        ..ProviderLimits::default()
+    };
+    let process = ManagedProcess::new(ProviderSpec {
+        id: command.to_owned(),
+        command: PathBuf::from(command),
+        base_args: Vec::new(),
+        environment: BTreeMap::new(),
+        version_requirement: semver::VersionReq::parse(requirement)
+            .expect("built-in provider requirement is valid"),
+        required: false,
+        limits,
+    });
+    match process.probe(&["--version".to_owned()]) {
+        Ok(version) => json!({
+            "provider": command,
+            "available": true,
+            "compatible": true,
+            "version": version.to_string(),
+            "testedRange": requirement,
+            "required": false,
+            "dataBoundary": data_boundary
+        }),
+        Err(error) => json!({
+            "provider": command,
+            "available": false,
+            "compatible": false,
+            "testedRange": requirement,
+            "required": false,
+            "warningCode": error.code(),
+            "dataBoundary": data_boundary,
+            "fallbackActive": true
+        }),
     }
 }
 

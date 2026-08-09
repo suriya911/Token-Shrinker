@@ -415,6 +415,11 @@ mode = "full" # lite | full | ultra | wenyan-lite | wenyan-full | wenyan-ultra |
 auto_clarity = true
 ```
 
+Optional providers run behind a bounded local subprocess/MCP boundary. `doctor --json` reports
+their tested version range, compatibility, data boundary, and fallback state. An unavailable or
+invalid optional provider falls back for that request; setting a provider to required makes the
+classified failure explicit. See [M6 optional providers](./docs/milestones/M6.md).
+
 Secrets do not belong in repository config. Provider credentials are referenced through environment variables or the operating system credential store.
 
 ## Development

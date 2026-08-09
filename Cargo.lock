@@ -1041,6 +1041,7 @@ name = "token-shrinker-cli"
 version = "0.0.0"
 dependencies = [
  "ed25519-dalek",
+ "semver",
  "serde",
  "serde_json",
  "tempfile",
@@ -1050,6 +1051,7 @@ dependencies = [
  "token-shrinker-memory",
  "token-shrinker-output",
  "token-shrinker-protocol",
+ "token-shrinker-provider",
  "token-shrinker-types",
  "token-shrinker-update",
 ]
@@ -1058,10 +1060,13 @@ dependencies = [
 name = "token-shrinker-compress"
 version = "0.0.0"
 dependencies = [
+ "semver",
  "serde",
+ "serde_json",
  "sha2",
  "tempfile",
  "token-shrinker-context",
+ "token-shrinker-provider",
  "token-shrinker-types",
 ]
 
@@ -1144,9 +1149,13 @@ dependencies = [
  "r2d2",
  "r2d2_sqlite",
  "rusqlite",
+ "semver",
+ "serde",
+ "serde_json",
  "sha2",
  "tempfile",
  "token-shrinker-context",
+ "token-shrinker-provider",
  "token-shrinker-types",
 ]
 
@@ -1169,14 +1178,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "token-shrinker-provider"
+version = "0.0.0"
+dependencies = [
+ "criterion",
+ "semver",
+ "serde_json",
+]
+
+[[package]]
 name = "token-shrinker-repo"
 version = "0.0.0"
 dependencies = [
  "ignore",
+ "semver",
  "serde",
  "sha2",
  "tempfile",
  "token-shrinker-context",
+ "token-shrinker-provider",
  "token-shrinker-types",
 ]
 

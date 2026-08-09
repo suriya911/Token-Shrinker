@@ -3,14 +3,255 @@
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{Connection, Transaction, TransactionBehavior, params};
+use semver::VersionReq;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{fmt, path::Path, time::Duration};
+use std::{
+    collections::BTreeMap,
+    fmt,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 use token_shrinker_context::{
     ContentHash, ContextCandidate, RelevanceSignals, Sensitivity, SourceId, SourceKind,
     SourceLocation,
 };
+use token_shrinker_provider::{
+    CircuitBreaker, McpSession, ProviderError, ProviderLimits, ProviderOutcome, ProviderSpec,
+    resolve_with_fallback,
+};
 
 const SCHEMA_VERSION: i64 = 1;
+
+/// Claude-Mem versions covered by adapter tests.
+pub const CLAUDE_MEM_VERSION_REQUIREMENT: &str = ">=13.0.0, <14.0.0";
+
+/// Validated record returned by an external memory provider.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalMemoryRecord {
+    /// Provider or record identifier.
+    pub id: String,
+    /// Memory text.
+    pub content: String,
+}
+
+/// Configurable MCP memory reader. Writes remain in built-in `SQLite` storage.
+#[derive(Clone, Debug)]
+pub struct McpMemoryProvider {
+    spec: ProviderSpec,
+    search_tool: String,
+    circuit: CircuitBreaker,
+}
+
+impl McpMemoryProvider {
+    /// Creates an MCP memory adapter with an exact process command and search tool.
+    #[must_use]
+    pub fn new(
+        id: impl Into<String>,
+        command: PathBuf,
+        base_args: Vec<String>,
+        search_tool: impl Into<String>,
+        version_requirement: VersionReq,
+        required: bool,
+    ) -> Self {
+        let limits = ProviderLimits::default();
+        Self {
+            spec: ProviderSpec {
+                id: id.into(),
+                command,
+                base_args,
+                environment: BTreeMap::new(),
+                version_requirement,
+                required,
+                limits,
+            },
+            search_tool: search_tool.into(),
+            circuit: CircuitBreaker::new(limits.failure_threshold, limits.cooldown),
+        }
+    }
+
+    /// Provider identifier used for attribution.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.spec.id
+    }
+
+    /// Verifies MCP initialization, version, and the configured search tool.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, protocol, or compatibility error.
+    pub fn probe(&self) -> Result<(), ProviderError> {
+        McpSession::connect(&self.spec, &self.search_tool).map(drop)
+    }
+
+    /// Searches external memory and validates a bounded JSON record schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, deadline, capability, or schema error.
+    pub fn search(
+        &self,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<ExternalMemoryRecord>, ProviderError> {
+        self.circuit.permit()?;
+        let result = self.search_inner(query, limit);
+        if result.is_ok() {
+            self.circuit.success();
+        } else {
+            self.circuit.failure();
+        }
+        result
+    }
+
+    /// Searches MCP memory or returns local `SQLite` records for this request.
+    ///
+    /// # Errors
+    ///
+    /// Returns the classified MCP failure when the provider is required.
+    pub fn search_or_fallback(
+        &self,
+        query: &str,
+        limit: usize,
+        fallback: impl FnOnce() -> Vec<ExternalMemoryRecord>,
+    ) -> Result<ProviderOutcome<Vec<ExternalMemoryRecord>>, ProviderError> {
+        resolve_with_fallback(&self.spec, self.search(query, limit), "sqlite", fallback)
+    }
+
+    fn search_inner(
+        &self,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<ExternalMemoryRecord>, ProviderError> {
+        if query.trim().is_empty() || limit == 0 || limit > 100 {
+            return Err(ProviderError::Malformed);
+        }
+        let mut session = McpSession::connect(&self.spec, &self.search_tool)?;
+        let result = session.call_tool(
+            &self.search_tool,
+            &serde_json::json!({"query":query,"limit":limit}),
+            self.spec.limits.operation_timeout,
+        )?;
+        parse_memory_result(&result, limit)
+    }
+}
+
+/// Claude-Mem's documented progressive-disclosure search adapter.
+#[derive(Clone, Debug)]
+pub struct ClaudeMemProvider(McpMemoryProvider);
+
+impl ClaudeMemProvider {
+    /// Configures a Claude-Mem MCP server command.
+    #[must_use]
+    pub fn new(command: PathBuf, base_args: Vec<String>, required: bool) -> Self {
+        Self(McpMemoryProvider::new(
+            "claude-mem",
+            command,
+            base_args,
+            "search",
+            VersionReq::parse(CLAUDE_MEM_VERSION_REQUIREMENT).unwrap_or(VersionReq::STAR),
+            required,
+        ))
+    }
+
+    /// Verifies the configured Claude-Mem server contract.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, protocol, or compatibility error.
+    pub fn probe(&self) -> Result<(), ProviderError> {
+        self.0.probe()
+    }
+
+    /// Searches Claude-Mem without enabling or invoking any write hook.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, deadline, capability, or schema error.
+    pub fn search(
+        &self,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<ExternalMemoryRecord>, ProviderError> {
+        self.0.search(query, limit)
+    }
+
+    /// Searches Claude-Mem or returns local `SQLite` records for this request.
+    ///
+    /// # Errors
+    ///
+    /// Returns the classified Claude-Mem failure when the provider is required.
+    pub fn search_or_fallback(
+        &self,
+        query: &str,
+        limit: usize,
+        fallback: impl FnOnce() -> Vec<ExternalMemoryRecord>,
+    ) -> Result<ProviderOutcome<Vec<ExternalMemoryRecord>>, ProviderError> {
+        self.0.search_or_fallback(query, limit, fallback)
+    }
+}
+
+fn parse_memory_result(
+    result: &serde_json::Value,
+    limit: usize,
+) -> Result<Vec<ExternalMemoryRecord>, ProviderError> {
+    let texts = result
+        .get("content")
+        .and_then(serde_json::Value::as_array)
+        .ok_or(ProviderError::Malformed)?
+        .iter()
+        .filter_map(|item| item.get("text").and_then(serde_json::Value::as_str));
+    let mut records = Vec::new();
+    for text in texts {
+        let value: serde_json::Value =
+            serde_json::from_str(text).unwrap_or_else(|_| serde_json::json!({"content":text}));
+        let items = value
+            .as_array()
+            .cloned()
+            .or_else(|| {
+                value
+                    .get("results")
+                    .and_then(serde_json::Value::as_array)
+                    .cloned()
+            })
+            .or_else(|| {
+                value
+                    .get("records")
+                    .and_then(serde_json::Value::as_array)
+                    .cloned()
+            })
+            .or_else(|| {
+                value
+                    .get("observations")
+                    .and_then(serde_json::Value::as_array)
+                    .cloned()
+            })
+            .unwrap_or_else(|| vec![value]);
+        for item in items {
+            let content = item
+                .get("content")
+                .or_else(|| item.get("text"))
+                .and_then(serde_json::Value::as_str)
+                .filter(|content| !content.is_empty())
+                .ok_or(ProviderError::Malformed)?
+                .to_owned();
+            let id = item
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map_or_else(
+                    || hash_content(content.as_bytes()).as_str()[..16].to_owned(),
+                    str::to_owned,
+                );
+            records.push(ExternalMemoryRecord { id, content });
+            if records.len() == limit {
+                return Ok(records);
+            }
+        }
+    }
+    Ok(records)
+}
 
 /// Isolation boundary for one memory record.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -717,6 +958,49 @@ impl std::error::Error for MemoryError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn generic_and_claude_memory_contracts_validate_records() {
+        let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("ts-provider")
+            .join("tests/fixtures/fake_provider.py");
+        let provider = McpMemoryProvider::new(
+            "generic-memory",
+            PathBuf::from("python"),
+            vec![script.to_string_lossy().into_owned(), "mcp".to_owned()],
+            "fake_search",
+            VersionReq::parse(">=1.0.0, <2.0.0").expect("requirement"),
+            false,
+        );
+        assert_eq!(
+            provider.search("safe", 5).expect("search"),
+            vec![ExternalMemoryRecord {
+                id: "one".to_owned(),
+                content: "safe result".to_owned(),
+            }]
+        );
+
+        let claude = ClaudeMemProvider(McpMemoryProvider::new(
+            "claude-mem",
+            PathBuf::from("python"),
+            vec![script.to_string_lossy().into_owned(), "mcp".to_owned()],
+            "search",
+            VersionReq::parse(">=1.0.0, <2.0.0").expect("requirement"),
+            false,
+        ));
+        assert_eq!(claude.search("safe", 1).expect("search").len(), 1);
+    }
+
+    #[test]
+    #[ignore = "requires a configured Claude-Mem MCP executable"]
+    fn live_claude_mem_probe() {
+        assert!(
+            ClaudeMemProvider::new(PathBuf::from("claude-mem"), Vec::new(), false)
+                .probe()
+                .is_ok()
+        );
+    }
 
     fn memory(id: &str, scope: MemoryScope, content: &str, created: i64) -> NewMemory {
         NewMemory {

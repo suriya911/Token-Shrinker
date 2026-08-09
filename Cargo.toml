@@ -39,6 +39,7 @@ token-shrinker-update = { path = "crates/ts-update" }
 token-shrinker-protocol = { path = "crates/ts-protocol" }
 token-shrinker-daemon = { path = "crates/ts-daemon" }
 token-shrinker-mcp = { path = "crates/ts-mcp" }
+token-shrinker-provider = { path = "crates/ts-provider" }
 
 [workspace.dependencies.serde_json]
 version = "=1.0.151"

@@ -275,7 +275,28 @@ impl PublicHandler {
     }
 
     fn wrap(request: &RpcRequest, data: &Value) -> Value {
-        json!({"protocolVersion": ProtocolVersion::CURRENT.to_string(), "requestId": request.id.as_str(), "warnings": [], "data": data})
+        let provider = match request.method.as_str() {
+            "token_shrinker_build_context" | "token_shrinker_fetch_source" => {
+                Some(("context", "native-repository", "local-workspace"))
+            }
+            "token_shrinker_search_memory" | "token_shrinker_remember" => {
+                Some(("memory", "sqlite", "local-database"))
+            }
+            "token_shrinker_execute" => Some(("execution", "native-process", "local-process")),
+            "token_shrinker_format_final" => Some(("output", "caveman-policy", "in-process")),
+            "token_shrinker_route" => Some(("routing", "deterministic-router", "in-process")),
+            _ => None,
+        };
+        let attribution =
+            provider.map_or_else(Vec::new, |(capability, provider, data_boundary)| {
+                vec![json!({
+                    "capability": capability,
+                    "provider": provider,
+                    "fallbackFrom": Value::Null,
+                    "dataBoundary": data_boundary
+                })]
+            });
+        json!({"protocolVersion": ProtocolVersion::CURRENT.to_string(), "requestId": request.id.as_str(), "warnings": [], "providerAttribution": attribution, "data": data})
     }
 
     fn dispatch_tool(
@@ -729,6 +750,15 @@ mod tests {
         let source_id = built["data"]["bundle"]["items"][0]["sourceId"]
             .as_str()
             .expect("source id");
+        assert_eq!(
+            built["providerAttribution"],
+            json!([{
+                "capability":"context",
+                "provider":"native-repository",
+                "fallbackFrom":Value::Null,
+                "dataBoundary":"local-workspace"
+            }])
+        );
         let fetched = handler
             .handle(
                 &request(

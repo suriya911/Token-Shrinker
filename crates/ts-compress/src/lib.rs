@@ -1,5 +1,6 @@
 //! Built-in deterministic context and terminal compressors plus raw artifact retention.
 
+use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -9,7 +10,230 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use token_shrinker_context::{ConservativeEstimator, ContextCandidate, SourceId, TokenCounter};
+use token_shrinker_provider::{
+    CircuitBreaker, ManagedProcess, McpSession, ProviderError, ProviderLimits, ProviderOutcome,
+    ProviderSpec, resolve_with_fallback,
+};
 use token_shrinker_types::TokenBudget;
+
+/// Headroom versions covered by adapter tests.
+pub const HEADROOM_VERSION_REQUIREMENT: &str = ">=0.22.0, <1.0.0";
+/// RTK versions covered by adapter tests.
+pub const RTK_VERSION_REQUIREMENT: &str = ">=0.45.0, <1.0.0";
+
+/// Validated result from an optional compressor.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderCompression {
+    /// Provider identifier for response attribution.
+    pub provider: String,
+    /// Compressed text.
+    pub compressed: String,
+    /// Provider-reported original token count when available.
+    pub original_tokens: Option<u64>,
+    /// Provider-reported compressed token count when available.
+    pub compressed_tokens: Option<u64>,
+}
+
+/// Optional Headroom MCP compressor. Content crosses the configured subprocess boundary.
+#[derive(Clone, Debug)]
+pub struct HeadroomProvider {
+    spec: ProviderSpec,
+    version_process: ManagedProcess,
+    circuit: CircuitBreaker,
+}
+
+impl HeadroomProvider {
+    /// Configures `headroom mcp serve` or a contract-compatible executable.
+    #[must_use]
+    pub fn new(command: PathBuf, base_args: Vec<String>, required: bool) -> Self {
+        let limits = ProviderLimits::default();
+        let version_spec = ProviderSpec {
+            id: "headroom".to_owned(),
+            command: command.clone(),
+            base_args: Vec::new(),
+            environment: BTreeMap::new(),
+            version_requirement: VersionReq::parse(HEADROOM_VERSION_REQUIREMENT)
+                .unwrap_or(VersionReq::STAR),
+            required,
+            limits,
+        };
+        let spec = ProviderSpec {
+            id: "headroom".to_owned(),
+            command,
+            base_args,
+            environment: BTreeMap::new(),
+            version_requirement: VersionReq::parse(HEADROOM_VERSION_REQUIREMENT)
+                .unwrap_or(VersionReq::STAR),
+            required,
+            limits,
+        };
+        Self {
+            spec,
+            version_process: ManagedProcess::new(version_spec),
+            circuit: CircuitBreaker::new(limits.failure_threshold, limits.cooldown),
+        }
+    }
+
+    /// Probes MCP initialization, version, and the compression capability.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, protocol, or compatibility error.
+    pub fn probe(&self) -> Result<(), ProviderError> {
+        self.version_process.probe(&["--version".to_owned()])?;
+        McpSession::connect_capability(&self.spec, "headroom_compress").map(drop)
+    }
+
+    /// Compresses content and validates Headroom's JSON result schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, deadline, or schema error.
+    pub fn compress(&self, content: &str) -> Result<ProviderCompression, ProviderError> {
+        self.circuit.permit()?;
+        let result = self.compress_inner(content);
+        if result.is_ok() {
+            self.circuit.success();
+        } else {
+            self.circuit.failure();
+        }
+        result
+    }
+
+    /// Compresses with Headroom or returns the built-in extractive result for this request.
+    ///
+    /// # Errors
+    ///
+    /// Returns the classified Headroom failure when the provider is required.
+    pub fn compress_or_fallback(
+        &self,
+        content: &str,
+        fallback: impl FnOnce() -> ProviderCompression,
+    ) -> Result<ProviderOutcome<ProviderCompression>, ProviderError> {
+        resolve_with_fallback(
+            &self.spec,
+            self.compress(content),
+            "builtin-extractive",
+            fallback,
+        )
+    }
+
+    fn compress_inner(&self, content: &str) -> Result<ProviderCompression, ProviderError> {
+        let mut session = McpSession::connect_capability(&self.spec, "headroom_compress")?;
+        let result = session.call_tool(
+            "headroom_compress",
+            &serde_json::json!({"content": content}),
+            self.spec.limits.operation_timeout,
+        )?;
+        let text = result
+            .get("content")
+            .and_then(serde_json::Value::as_array)
+            .and_then(|items| items.first())
+            .and_then(|item| item.get("text"))
+            .and_then(serde_json::Value::as_str)
+            .ok_or(ProviderError::Malformed)?;
+        let value: serde_json::Value =
+            serde_json::from_str(text).map_err(|_| ProviderError::Malformed)?;
+        let compressed = value
+            .get("compressed")
+            .and_then(serde_json::Value::as_str)
+            .filter(|value| !value.is_empty())
+            .ok_or(ProviderError::Malformed)?
+            .to_owned();
+        Ok(ProviderCompression {
+            provider: "headroom".to_owned(),
+            compressed,
+            original_tokens: value
+                .get("original_tokens")
+                .and_then(serde_json::Value::as_u64),
+            compressed_tokens: value
+                .get("compressed_tokens")
+                .and_then(serde_json::Value::as_u64),
+        })
+    }
+}
+
+/// Optional RTK terminal-output compressor. Raw command output crosses the subprocess boundary.
+#[derive(Clone, Debug)]
+pub struct RtkProvider {
+    process: ManagedProcess,
+}
+
+impl RtkProvider {
+    /// Creates an adapter for the RTK executable.
+    #[must_use]
+    pub fn new(command: PathBuf, required: bool) -> Self {
+        Self::from_spec(ProviderSpec {
+            id: "rtk".to_owned(),
+            command,
+            base_args: Vec::new(),
+            environment: BTreeMap::new(),
+            version_requirement: VersionReq::parse(RTK_VERSION_REQUIREMENT)
+                .unwrap_or(VersionReq::STAR),
+            required,
+            limits: ProviderLimits::default(),
+        })
+    }
+
+    /// Creates an adapter from an advanced provider specification.
+    #[must_use]
+    pub fn from_spec(spec: ProviderSpec) -> Self {
+        Self {
+            process: ManagedProcess::new(spec),
+        }
+    }
+
+    /// Verifies executable availability and supported version.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider probe or compatibility error.
+    pub fn probe(&self) -> Result<String, ProviderError> {
+        self.process
+            .probe(&["--version".to_owned()])
+            .map(|version| version.to_string())
+    }
+
+    /// Applies RTK's log filter to already-captured terminal output.
+    ///
+    /// # Errors
+    ///
+    /// Returns a normalized provider, deadline, size, or UTF-8 schema error.
+    pub fn compress_terminal(&self, content: &str) -> Result<ProviderCompression, ProviderError> {
+        let output = self
+            .process
+            .invoke(&["log".to_owned()], content.as_bytes())?;
+        let compressed = String::from_utf8(output.stdout).map_err(|_| ProviderError::Malformed)?;
+        if compressed.trim().is_empty() && !content.trim().is_empty() {
+            return Err(ProviderError::Malformed);
+        }
+        Ok(ProviderCompression {
+            provider: "rtk".to_owned(),
+            compressed,
+            original_tokens: None,
+            compressed_tokens: None,
+        })
+    }
+
+    /// Compresses with RTK or returns the built-in terminal result for this request.
+    ///
+    /// # Errors
+    ///
+    /// Returns the classified RTK failure when the provider is required.
+    pub fn compress_terminal_or_fallback(
+        &self,
+        content: &str,
+        fallback: impl FnOnce() -> ProviderCompression,
+    ) -> Result<ProviderOutcome<ProviderCompression>, ProviderError> {
+        resolve_with_fallback(
+            self.process.spec(),
+            self.compress_terminal(content),
+            "builtin-terminal",
+            fallback,
+        )
+    }
+}
 
 /// One retained extractive passage with exact source lines.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -545,6 +769,69 @@ mod tests {
     use token_shrinker_context::{
         ContentHash, RelevanceSignals, Sensitivity, SourceKind, SourceLocation,
     };
+
+    fn fake_script() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("ts-provider")
+            .join("tests/fixtures/fake_provider.py")
+    }
+
+    #[test]
+    fn headroom_contract_validates_compression_schema() {
+        let provider = HeadroomProvider::new(
+            PathBuf::from("python"),
+            vec![
+                fake_script().to_string_lossy().into_owned(),
+                "mcp-headroom".to_owned(),
+            ],
+            false,
+        );
+        let result = provider.compress("long context").expect("compression");
+        assert_eq!(result.provider, "headroom");
+        assert_eq!(result.compressed, "short");
+        assert_eq!(result.compressed_tokens, Some(2));
+    }
+
+    #[test]
+    fn rtk_contract_accepts_bounded_utf8_terminal_output() {
+        let provider = RtkProvider::from_spec(ProviderSpec {
+            id: "rtk".to_owned(),
+            command: PathBuf::from("python"),
+            base_args: vec![
+                fake_script().to_string_lossy().into_owned(),
+                "echo".to_owned(),
+            ],
+            environment: BTreeMap::new(),
+            version_requirement: VersionReq::STAR,
+            required: false,
+            limits: ProviderLimits::default(),
+        });
+        let result = provider.compress_terminal("line\n").expect("compression");
+        assert_eq!(result.compressed.lines().collect::<Vec<_>>(), vec!["line"]);
+    }
+
+    #[test]
+    #[ignore = "requires locally installed Headroom"]
+    fn live_headroom_probe() {
+        HeadroomProvider::new(
+            PathBuf::from("headroom"),
+            vec!["mcp".to_owned(), "serve".to_owned()],
+            false,
+        )
+        .probe()
+        .expect("compatible Headroom MCP server");
+    }
+
+    #[test]
+    #[ignore = "requires locally installed RTK"]
+    fn live_rtk_probe() {
+        assert!(
+            RtkProvider::new(PathBuf::from("rtk"), false)
+                .probe()
+                .is_ok()
+        );
+    }
 
     fn candidate(content: &str) -> ContextCandidate {
         ContextCandidate {
