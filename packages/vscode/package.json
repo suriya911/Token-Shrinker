@@ -1,16 +1,87 @@
 {
-  "name": "@token-shrinker/vscode",
+  "name": "token-shrinker",
+  "displayName": "Token-Shrinker",
+  "description": "Build bounded Token-Shrinker context from trusted VS Code workspaces.",
+  "publisher": "token-shrinker",
   "version": "0.0.0",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suriya911/Token-Shrinker.git"
+  },
   "type": "module",
   "license": "Apache-2.0",
-  "files": ["dist"],
+  "main": "./dist/index.js",
+  "engines": {
+    "vscode": ">=1.125.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onCommand:tokenShrinker.buildContext",
+    "onCommand:tokenShrinker.showStatus",
+    "onCommand:tokenShrinker.showStats"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Status is available, but repository context and statistics are disabled until the workspace is trusted."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "tokenShrinker.buildContext",
+        "title": "Token-Shrinker: Build Context"
+      },
+      {
+        "command": "tokenShrinker.showStatus",
+        "title": "Token-Shrinker: Show Status"
+      },
+      {
+        "command": "tokenShrinker.showStats",
+        "title": "Token-Shrinker: Show Statistics"
+      }
+    ],
+    "configuration": {
+      "title": "Token-Shrinker",
+      "properties": {
+        "tokenShrinker.binaryPath": {
+          "type": "string",
+          "default": "token-shrinker",
+          "scope": "machine",
+          "description": "Exact Token-Shrinker executable path. It is launched directly without a shell."
+        },
+        "tokenShrinker.contextBudget": {
+          "type": "number",
+          "default": 16000,
+          "minimum": 1,
+          "maximum": 1000000,
+          "scope": "resource",
+          "description": "Maximum context token budget."
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && esbuild src/index.ts src/core.ts --bundle --platform=node --format=esm --target=node24 --external:vscode --outdir=dist",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm build && node --test test/*.mjs",
+    "package": "pnpm build && vsce package --no-dependencies --out dist/token-shrinker.vsix"
   },
   "dependencies": {
     "@token-shrinker/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.125.0",
+    "@vscode/vsce": "3.9.2",
+    "esbuild": "0.28.1"
   }
 }

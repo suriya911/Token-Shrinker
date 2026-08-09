@@ -13,7 +13,7 @@ Token-Shrinker is pre-alpha and has no supported release yet. Until the first re
 
 Do not open a public issue, discussion, or pull request for a suspected vulnerability.
 
-Before the repository is made public, `SECURITY_CONTACT_TBD` must be replaced with a monitored private address. Until then, use the repository's GitHub private vulnerability reporting feature if it is enabled. If it is not enabled, contact the repository owner privately through their GitHub profile.
+Use the repository's GitHub private vulnerability reporting feature. If it is unavailable, contact the repository owner privately through their GitHub profile. Never include vulnerability details in a public issue.
 
 Include only the minimum information needed to reproduce the problem:
 
@@ -40,3 +40,4 @@ High-priority areas include command execution, path traversal and symlink escape
 
 The baseline runtime is local-first and has no hosted telemetry endpoint. Optional integrations may add outbound data paths; each must disclose its data boundary and remain disabled or safely degraded when unavailable.
 
+The maintained trust-boundary analysis, abuse cases, mitigations, residual risks, and verification map are documented in [`docs/threat-model.md`](docs/threat-model.md).

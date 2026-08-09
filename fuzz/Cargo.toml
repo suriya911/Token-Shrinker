@@ -1,0 +1,30 @@
+[package]
+name = "token-shrinker-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.10"
+semver = "=1.0.28"
+token-shrinker-provider = { path = "../crates/ts-provider" }
+
+[[bin]]
+name = "provider_version"
+path = "fuzz_targets/provider_version.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "provider_response"
+path = "fuzz_targets/provider_response.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

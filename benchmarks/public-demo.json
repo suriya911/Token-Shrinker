@@ -1,0 +1,55 @@
+{
+  "baseline": {
+    "contextTokens": 2450,
+    "terminalTokens": 585,
+    "totalTokens": 3035
+  },
+  "citationCorrectnessBasisPoints": 10000,
+  "environment": {
+    "arch": "x86_64",
+    "binaryVersion": "0.0.0",
+    "os": "windows"
+  },
+  "fixture": "demo-repo",
+  "fixtureManifest": "fixtures/demo-manifest.yaml",
+  "latencyMicros": {
+    "compression": 19,
+    "contextBuild": 3075,
+    "routing": 5
+  },
+  "optimized": {
+    "contextTokens": 784,
+    "terminalTokens": 504,
+    "totalTokens": 1288
+  },
+  "passed": true,
+  "providers": {
+    "context": "native-repository",
+    "optionalProviders": false,
+    "terminalCompression": "builtin-terminal"
+  },
+  "reductionBasisPoints": 5756,
+  "requiredEvidenceRecallBasisPoints": 10000,
+  "rootCause": "The active-session comparison accepts equality; `>=` must be `>`.",
+  "route": {
+    "budget": 4000,
+    "mode": "BUILD",
+    "reasons": [
+      "build_operation",
+      "budget_override"
+    ]
+  },
+  "schemaVersion": 1,
+  "secretCanaryExcluded": true,
+  "selectedSources": [
+    "config/auth-policy.json",
+    "src/api/authorize.mjs",
+    "src/auth/session.mjs",
+    "tests/session.test.mjs"
+  ],
+  "task": "Find why a session expiring exactly at request time is authorized and propose the smallest safe fix.",
+  "tokenizer": {
+    "id": "byte_upper_bound_v1",
+    "precision": "estimated"
+  }
+}

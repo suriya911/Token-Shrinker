@@ -432,6 +432,22 @@ pub fn validate_version(output: &str, requirement: &VersionReq) -> Result<Versio
     }
 }
 
+/// Parses one bounded MCP JSON-RPC response without interpreting its content.
+///
+/// # Errors
+///
+/// Returns too-large or malformed when the line exceeds the boundary or is not a JSON-RPC object.
+pub fn parse_mcp_response(line: &str, max_bytes: usize) -> Result<Value, ProviderError> {
+    if line.len() > max_bytes {
+        return Err(ProviderError::ResponseTooLarge);
+    }
+    let value: Value = serde_json::from_str(line).map_err(|_| ProviderError::Malformed)?;
+    if value.get("jsonrpc").and_then(Value::as_str) != Some("2.0") || !value.is_object() {
+        return Err(ProviderError::Malformed);
+    }
+    Ok(value)
+}
+
 /// Short-lived MCP stdio session for a single capability call.
 pub struct McpSession {
     child: Child,
@@ -575,10 +591,7 @@ impl McpSession {
                     mpsc::RecvTimeoutError::Timeout => ProviderError::Timeout,
                     mpsc::RecvTimeoutError::Disconnected => ProviderError::Crashed,
                 })??;
-            if line.len() > self.max_response_bytes {
-                return Err(ProviderError::ResponseTooLarge);
-            }
-            let value: Value = serde_json::from_str(&line).map_err(|_| ProviderError::Malformed)?;
+            let value = parse_mcp_response(&line, self.max_response_bytes)?;
             if value.get("id").and_then(Value::as_u64) == Some(id) {
                 return Ok(value);
             }
@@ -641,6 +654,7 @@ fn read_lines(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     fn fake_spec(mode: &str) -> ProviderSpec {
         let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -692,6 +706,36 @@ mod tests {
             resolve_with_fallback(&spec, Err(ProviderError::Malformed), "builtin", || "safe")
                 .expect("fallback");
         assert_eq!(outcome.value, "safe");
+    }
+
+    #[test]
+    fn mcp_parser_rejects_malformed_and_oversized_corpus() {
+        assert!(parse_mcp_response(r#"{"jsonrpc":"2.0","id":1,"result":{}}"#, 128).is_ok());
+        assert_eq!(
+            parse_mcp_response("not-json", 128),
+            Err(ProviderError::Malformed)
+        );
+        assert_eq!(
+            parse_mcp_response(r#"{"jsonrpc":"2.0"}"#, 4),
+            Err(ProviderError::ResponseTooLarge)
+        );
+    }
+
+    #[test]
+    fn checked_in_fuzz_corpus_never_panics() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fuzz/corpus");
+        let requirement = VersionReq::parse(">=1.0.0, <2.0.0").expect("requirement");
+
+        for entry in fs::read_dir(root.join("provider_version")).expect("version corpus") {
+            let bytes = fs::read(entry.expect("corpus entry").path()).expect("corpus bytes");
+            let input = String::from_utf8_lossy(&bytes);
+            let _ = validate_version(&input, &requirement);
+        }
+        for entry in fs::read_dir(root.join("provider_response")).expect("response corpus") {
+            let bytes = fs::read(entry.expect("corpus entry").path()).expect("corpus bytes");
+            let input = String::from_utf8_lossy(&bytes);
+            let _ = parse_mcp_response(&input, 1_024);
+        }
     }
 
     #[test]
