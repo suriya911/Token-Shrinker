@@ -48,6 +48,14 @@ export interface AdapterDetection {
   configured: boolean;
 }
 
+export type ClientApprovalState = "approved" | "required" | "not-applicable" | "unknown";
+
+export interface AdapterClientState {
+  approval: ClientApprovalState;
+  connection: "not-checked";
+  detail: string;
+}
+
 export interface PlannedFileChange {
   path: string;
   kind: "config" | "skill" | "support";
@@ -74,22 +82,24 @@ export class AdapterConfigError extends Error {
   }
 }
 
-const SKILL = `<!-- token-shrinker-owned:v1 -->
----
+const SKILL = `---
 name: token-shrinker
 description: Use Token-Shrinker to route work, build bounded evidence context, fetch omitted sources, inspect warnings, and request approved execution.
 license: Apache-2.0
 ---
+<!-- token-shrinker-owned:v1 -->
 
 # Token-Shrinker workflow
 
 1. Call \`token_shrinker_capabilities\` before relying on optional providers or execution.
 2. Call \`token_shrinker_route\` when the appropriate FAST, BUILD, or DEEP route is unclear.
 3. Call \`token_shrinker_build_context\` with the repository root, concrete goal, and explicit token budget.
-4. Use \`token_shrinker_fetch_source\` when the context bundle identifies omitted evidence needed for correctness.
-5. Inspect every warning and preserve relevant warnings, citations, commands, exact errors, and uncertainty.
-6. Call \`token_shrinker_execute\` only after the user approves the exact command and policy permits it.
-7. Use \`token_shrinker_format_final\` only for the final human response. Never apply concise formatting to tool calls, JSON, code, commands, logs, citations, or intermediate evidence.
+4. Treat only returned bundle item content as evidence. A source ID or omission is not evidence by itself.
+5. If an omitted source may be required for correctness, call \`token_shrinker_fetch_source\` with its exact source ID before answering. If retrieval fails or the content still does not establish the claim, say the claim is unverified.
+6. Cite only content actually returned by \`token_shrinker_build_context\` or \`token_shrinker_fetch_source\`. Never infer implementation details from filenames, source IDs, package metadata, or prior knowledge.
+7. Inspect every warning and preserve relevant warnings, citations, commands, exact errors, and uncertainty.
+8. Call \`token_shrinker_execute\` only after the user approves the exact command and policy permits it.
+9. Use \`token_shrinker_format_final\` only for the final human response. Never apply concise formatting to tool calls, JSON, code, commands, logs, citations, or intermediate evidence.
 
 If Token-Shrinker is unavailable, say that the \`token-shrinker\` executable is missing and ask the user to install it or run \`token-shrinker doctor\`. Never redirect provider endpoints, credentials, or native model transport.
 `;
@@ -178,6 +188,43 @@ export async function validateAdapter(definition: AdapterDefinition,
     if (!capabilities.data || !bundle.data) throw new Error("adapter validation returned no data");
     return { capabilities: true, buildContext: true };
   } finally { await client.close(); }
+}
+
+/** Reports visible client approval state without changing or bypassing client consent. */
+export async function inspectAdapterClientState(definition: AdapterDefinition,
+  context: AdapterContext): Promise<AdapterClientState> {
+  if (definition.integration === "aider-context") return {
+    approval: "not-applicable", connection: "not-checked",
+    detail: "Aider uses generated context rather than a persistent MCP server.",
+  };
+  if (definition.id !== "claude-code") return {
+    approval: "unknown", connection: "not-checked",
+    detail: "Server protocol was validated directly; client approval and connection were not checked.",
+  };
+  const settings = await readOptional(resolve(context.root, ".claude/settings.local.json"));
+  if (settings === null) return {
+    approval: "unknown", connection: "not-checked",
+    detail: "Claude project approval has not been recorded in .claude/settings.local.json.",
+  };
+  const parsed = parseJsonObject(settings, ".claude/settings.local.json");
+  const disabled = stringArray(parsed.disabledMcpjsonServers);
+  const enabled = stringArray(parsed.enabledMcpjsonServers);
+  if (disabled.includes("token-shrinker")) return {
+    approval: "required", connection: "not-checked",
+    detail: "Claude rejected the project MCP server. Run `claude mcp reset-project-choices`, restart Claude, and approve token-shrinker.",
+  };
+  if (enabled.includes("token-shrinker")) return {
+    approval: "approved", connection: "not-checked",
+    detail: "Claude project settings record token-shrinker as approved; live client connection was not checked.",
+  };
+  return {
+    approval: "unknown", connection: "not-checked",
+    detail: "Claude approval is not explicit in project-local settings; confirm with `claude mcp get token-shrinker`.",
+  };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 function mutateConfig(config: ManagedConfig, before: string | null,
@@ -334,7 +381,8 @@ function isPlausibleToml(source: string): boolean {
 function mutateOwnedText(before: string | null, owned: string, action: AdapterAction,
   path: string): string | null {
   if (action === "install") {
-    if (before !== null && before !== owned) throw new AdapterConfigError(
+    if (before !== null && before !== owned &&
+      !before.includes("<!-- token-shrinker-owned:")) throw new AdapterConfigError(
       `Refusing to overwrite non-owned file ${path}`, "ownership-conflict");
     return owned;
   }

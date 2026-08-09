@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
+    env, fs,
     io::{self, BufRead, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Mutex, atomic::AtomicBool},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use token_shrinker_compress::compress_terminal;
 use token_shrinker_daemon::{
@@ -19,10 +20,15 @@ use token_shrinker_output::{FormatRequest, OutputMode, ProfileConfig, resolve};
 use token_shrinker_protocol::RpcRequest;
 use token_shrinker_repo::RepositoryProvider;
 use token_shrinker_router::{RouterConfig, route};
-use token_shrinker_types::{ProtocolVersion, RequestId, TokenBudget};
+use token_shrinker_telemetry::{
+    EventStatus, RequestEvent, TelemetryStore, TokenDirection, TokenEvent,
+};
+use token_shrinker_types::{ProtocolVersion, RequestId, RouteMode, TokenBudget};
 
 /// Stable MCP protocol revision implemented by the stdio transport.
 pub const MCP_PROTOCOL_VERSION: &str = "2025-11-25";
+/// Previous MCP revision retained for clients that have not adopted the latest stable revision.
+pub const MCP_PROTOCOL_VERSION_COMPAT: &str = "2025-06-18";
 /// Public JSON schema generation.
 pub const PUBLIC_SCHEMA_VERSION: u16 = 1;
 
@@ -225,6 +231,7 @@ pub struct PublicHandler {
     registry: CapabilityRegistry,
     memory: Mutex<MemoryStore>,
     output: Mutex<ProfileConfig>,
+    telemetry: TelemetryStore,
 }
 
 impl std::fmt::Debug for PublicHandler {
@@ -252,12 +259,21 @@ impl PublicHandler {
         ] {
             registry.register(id, provider, true, provider, false);
         }
+        let telemetry = if cfg!(test) {
+            TelemetryStore::open_in_memory()
+        } else {
+            let data = data_directory().ok_or(ServiceError::Internal("data-directory"))?;
+            fs::create_dir_all(&data).map_err(|_| ServiceError::Internal("data-directory"))?;
+            TelemetryStore::open(data.join("telemetry.db"), 4)
+        }
+        .map_err(|_| ServiceError::Internal("telemetry-open"))?;
         Ok(Self {
             registry,
             memory: Mutex::new(
                 MemoryStore::open_in_memory().map_err(|_| ServiceError::Internal("memory-open"))?,
             ),
             output: Mutex::new(ProfileConfig::default()),
+            telemetry,
         })
     }
 
@@ -311,12 +327,12 @@ impl PublicHandler {
                 RouterConfig::default(),
             ))
             .map_err(ServiceError::Json)?,
-            "token_shrinker_build_context" => build_context(&request.params)?,
+            "token_shrinker_build_context" => self.build_context(request)?,
             "token_shrinker_fetch_source" => fetch_source(&request.params)?,
             "token_shrinker_search_memory" => self.search_memory(&request.params)?,
             "token_shrinker_remember" => self.remember(&request.params)?,
             "token_shrinker_execute" => execute(&request.params, cancelled)?,
-            "token_shrinker_stats" => json!({"savings": [], "contentTelemetry": false}),
+            "token_shrinker_stats" => self.stats()?,
             "token_shrinker_format_final" => self.format_final(&request.params)?,
             "health" => {
                 serde_json::to_value(self.registry.overall_health()).map_err(ServiceError::Json)?
@@ -338,7 +354,74 @@ impl PublicHandler {
             "health": match self.registry.overall_health() { HealthState::Healthy => "healthy", HealthState::Degraded => "degraded", HealthState::Failed => "failed" },
             "capabilities": capabilities,
             "tools": tool_definitions().into_iter().map(|tool| tool.name).collect::<Vec<_>>()
+            ,"nativeTransport": native_transport_diagnostics(|key| env::var(key).ok())
         }))
+    }
+
+    fn build_context(&self, request: &RpcRequest) -> Result<Value, ServiceError> {
+        let started = Instant::now();
+        let params: ContextParams = deserialize(&request.params)?;
+        let budget =
+            TokenBudget::from_u32(params.budget).ok_or(ServiceError::Internal("zero-budget"))?;
+        let result = build_baseline_context(params.root, &params.goal, budget)
+            .map_err(|_| ServiceError::Internal("context-build"))?;
+        let now = unix_millis()?;
+        self.telemetry
+            .record_request(&RequestEvent {
+                request_id: request.id.clone(),
+                session_id: "local-mcp".to_owned(),
+                agent: "mcp-client".to_owned(),
+                mode: RouteMode::Build,
+                started_at_ms: now,
+                duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+                status: EventStatus::Success,
+            })
+            .and_then(|()| {
+                self.telemetry.record_tokens(&TokenEvent {
+                    request_id: request.id.clone(),
+                    stage: "context".to_owned(),
+                    direction: TokenDirection::Input,
+                    raw_tokens: result.discovered_tokens,
+                    optimized_tokens: result.bundle.trace.used_tokens,
+                    tokenizer: "byte_upper_bound_v1".to_owned(),
+                    exact: false,
+                    created_at_ms: now,
+                })
+            })
+            .map_err(|_| ServiceError::Internal("telemetry-write"))?;
+        let mut bundle = serde_json::to_value(&result.bundle).map_err(ServiceError::Json)?;
+        let omission_total = bundle["omissions"].as_array().map_or(0, Vec::len);
+        if let Some(omissions) = bundle["omissions"].as_array_mut() {
+            omissions.truncate(100);
+        }
+        let omission_returned = bundle["omissions"].as_array().map_or(0, Vec::len);
+        Ok(json!({"bundle": bundle, "omissionSummary": {
+                "total": omission_total,
+                "returned": omission_returned,
+                "truncated": omission_total.saturating_sub(omission_returned)
+            }, "warnings": result.warnings,
+            "repositoryTrace": result.repository_trace}))
+    }
+
+    fn stats(&self) -> Result<Value, ServiceError> {
+        let savings = self
+            .telemetry
+            .token_savings()
+            .map_err(|_| ServiceError::Internal("telemetry-read"))?
+            .into_iter()
+            .map(|row| {
+                json!({
+                    "tokenizer": row.tokenizer,
+                    "exact": row.exact,
+                    "rawTokens": row.raw_tokens,
+                    "optimizedTokens": row.optimized_tokens,
+                    "savingsTokens": row.savings_tokens,
+                    "savingsPercent": row.savings_percent(),
+                    "eventCount": row.event_count
+                })
+            })
+            .collect::<Vec<_>>();
+        Ok(json!({"savings": savings, "contentTelemetry": false}))
     }
 
     fn search_memory(&self, value: &Value) -> Result<Value, ServiceError> {
@@ -412,17 +495,6 @@ struct ContextParams {
     goal: String,
     budget: u32,
 }
-fn build_context(value: &Value) -> Result<Value, ServiceError> {
-    let params: ContextParams = deserialize(value)?;
-    let budget =
-        TokenBudget::from_u32(params.budget).ok_or(ServiceError::Internal("zero-budget"))?;
-    let result = build_baseline_context(params.root, &params.goal, budget)
-        .map_err(|_| ServiceError::Internal("context-build"))?;
-    Ok(
-        json!({"bundle": result.bundle, "warnings": result.warnings, "repositoryTrace": result.repository_trace}),
-    )
-}
-
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct FetchParams {
@@ -544,6 +616,61 @@ fn unix_millis() -> Result<i64, ServiceError> {
     i64::try_from(millis).map_err(|_| ServiceError::Internal("clock"))
 }
 
+fn data_directory() -> Option<PathBuf> {
+    env::var_os("TOKEN_SHRINKER_DATA_DIR")
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var_os("LOCALAPPDATA").map(|path| PathBuf::from(path).join("Token-Shrinker/data"))
+        })
+        .or_else(|| {
+            env::var_os("XDG_DATA_HOME").map(|path| PathBuf::from(path).join("token-shrinker"))
+        })
+        .or_else(|| {
+            env::var_os("HOME").map(|path| PathBuf::from(path).join(".local/share/token-shrinker"))
+        })
+}
+
+fn native_transport_diagnostics(get: impl Fn(&str) -> Option<String>) -> Value {
+    const ENDPOINT_KEYS: &[&str] = &[
+        "ANTHROPIC_BASE_URL",
+        "OPENAI_BASE_URL",
+        "GOOGLE_GEMINI_BASE_URL",
+        "GOOGLE_VERTEX_BASE_URL",
+    ];
+    let overrides = ENDPOINT_KEYS
+        .iter()
+        .filter(|key| get(key).is_some_and(|value| !value.trim().is_empty()))
+        .copied()
+        .collect::<Vec<_>>();
+    let wrapper = get("TOKEN_SHRINKER_BINARY").filter(|value| {
+        let name = Path::new(value)
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        matches!(
+            name.as_str(),
+            "claude" | "codex" | "gemini" | "opencode" | "opencode2" | "aider"
+        )
+    });
+    let safe = overrides.is_empty() && wrapper.is_none();
+    let warning_codes = overrides
+        .iter()
+        .map(|_| "provider-endpoint-override")
+        .chain(wrapper.iter().map(|_| "wrapper-recursion"))
+        .collect::<Vec<_>>();
+    json!({
+        "safe": safe,
+        "remoteControlEligible": !overrides.contains(&"ANTHROPIC_BASE_URL") && wrapper.is_none(),
+        "configuredEndpointOverrides": overrides,
+        "wrapperRecursionDetected": wrapper.is_some(),
+        "warningCodes": warning_codes,
+        "remediation": if safe { Value::Null } else {
+            json!("Remove unintended provider base-URL overrides or agent wrappers; Token-Shrinker adapters must use MCP tools while the agent keeps its native model transport. No setting was changed.")
+        }
+    })
+}
+
 /// Serves MCP over newline-delimited UTF-8 stdio until input closes.
 ///
 /// # Errors
@@ -577,9 +704,16 @@ pub fn handle_mcp_message(handler: &PublicHandler, line: &str) -> Option<Value> 
         .unwrap_or_default();
     let id = id?;
     let result = match method {
-        "initialize" => Ok(
-            json!({"protocolVersion":MCP_PROTOCOL_VERSION,"capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"token-shrinker","title":"Token-Shrinker","version":env!("CARGO_PKG_VERSION"),"description":"Local context optimization service"},"instructions":"Use capabilities first; execution requires explicit user approval."}),
-        ),
+        "initialize" => {
+            let requested = message["params"]["protocolVersion"].as_str();
+            let negotiated = match requested {
+                Some(version @ (MCP_PROTOCOL_VERSION | MCP_PROTOCOL_VERSION_COMPAT)) => version,
+                _ => MCP_PROTOCOL_VERSION,
+            };
+            Ok(
+                json!({"protocolVersion":negotiated,"capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"token-shrinker","title":"Token-Shrinker","version":env!("CARGO_PKG_VERSION"),"description":"Local context optimization service"},"instructions":"Use capabilities first; execution requires explicit user approval."}),
+            )
+        }
         "ping" => Ok(json!({})),
         "tools/list" => serde_json::to_value(json!({"tools":tool_definitions()}))
             .map_err(|_| ServiceError::Internal("tool-list")),
@@ -712,6 +846,11 @@ mod tests {
             initialized["result"]["protocolVersion"],
             MCP_PROTOCOL_VERSION
         );
+        let compatible = handle_mcp_message(&handler, r#"{"jsonrpc":"2.0","id":10,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"gemini","version":"test"}}}"#).expect("compatible response");
+        assert_eq!(
+            compatible["result"]["protocolVersion"],
+            MCP_PROTOCOL_VERSION_COMPAT
+        );
         let listed = handle_mcp_message(
             &handler,
             r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#,
@@ -769,6 +908,75 @@ mod tests {
             )
             .expect("fetch");
         assert_eq!(fetched["data"]["content"], "fn target() {}\n");
+
+        let stats = handler
+            .handle(
+                &request("token_shrinker_stats", json!({})),
+                &AtomicBool::new(false),
+            )
+            .expect("stats");
+        assert_eq!(stats["data"]["contentTelemetry"], false);
+        assert_eq!(stats["data"]["savings"][0]["eventCount"], 1);
+        assert!(stats["data"]["savings"][0]["rawTokens"].as_u64().is_some());
+    }
+
+    #[test]
+    fn bounded_context_includes_matching_range_from_large_source() {
+        let directory = tempfile::tempdir().expect("temp");
+        let mut source = (0..300)
+            .map(|index| format!("export const filler{index} = {index};"))
+            .collect::<Vec<_>>();
+        source.insert(
+            210,
+            "export function selectWindowsNativeExecutable() { return 'token-shrinker.exe'; }"
+                .to_owned(),
+        );
+        std::fs::write(directory.path().join("launcher.ts"), source.join("\n")).expect("source");
+        let handler = PublicHandler::new().expect("handler");
+        let built = handler
+            .handle(
+                &request(
+                    "token_shrinker_build_context",
+                    json!({"root":directory.path(),
+                        "goal":"selectWindowsNativeExecutable Windows native executable",
+                        "budget":4000}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("build");
+        let items = built["data"]["bundle"]["items"].as_array().expect("items");
+        let matching = items
+            .iter()
+            .find(|item| {
+                item["content"]
+                    .as_str()
+                    .is_some_and(|content| content.contains("selectWindowsNativeExecutable"))
+            })
+            .expect("matching chunk included");
+        assert!(
+            matching["sourceId"]
+                .as_str()
+                .expect("source id")
+                .contains("#L")
+        );
+        assert!(built["data"]["bundle"]["used"]["tokens"].as_u64().unwrap() <= 4000);
+        assert_eq!(
+            built["data"]["omissionSummary"]["returned"],
+            built["data"]["bundle"]["omissions"]
+                .as_array()
+                .expect("omissions")
+                .len()
+        );
+    }
+
+    #[test]
+    fn capabilities_report_model_transport_separately_from_execution() {
+        let report = native_transport_diagnostics(|key| {
+            (key == "OPENAI_BASE_URL").then(|| "http://proxy.invalid".to_owned())
+        });
+        assert_eq!(report["safe"], false);
+        assert_eq!(report["wrapperRecursionDetected"], false);
+        assert_eq!(report["configuredEndpointOverrides"][0], "OPENAI_BASE_URL");
     }
 
     #[test]

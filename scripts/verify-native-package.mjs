@@ -106,7 +106,10 @@ try {
   const add = spawnSync(process.execPath,
     [launcher, "add", "codex", "--root", agentRoot, "--json"], { encoding: "utf8" });
   assert.equal(add.status, 0, add.stderr);
-  assert.equal(JSON.parse(add.stdout).validated, true);
+  const adapterResult = JSON.parse(add.stdout);
+  assert.equal(adapterResult.serverProtocolValidated, true);
+  assert.equal(adapterResult.clientApproval, "unknown");
+  assert.equal(adapterResult.clientConnection, "not-checked");
   await access(join(agentRoot, ".codex", "config.toml"));
   await access(join(agentRoot, ".agents", "skills", "token-shrinker", "SKILL.md"));
   const remove = spawnSync(process.execPath,

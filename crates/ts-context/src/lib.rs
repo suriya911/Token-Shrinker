@@ -278,6 +278,9 @@ pub struct RelevanceSignals {
     /// Candidate contains an exact requested term or symbol.
     #[serde(default)]
     pub exact_match: bool,
+    /// Number of distinct normalized query terms present in this candidate.
+    #[serde(default)]
+    pub term_match_count: u8,
     /// Candidate path matches a named path or symbol hint.
     #[serde(default)]
     pub path_match: bool,
@@ -296,7 +299,11 @@ impl RelevanceSignals {
         let exact = if self.exact_match { 800 } else { 0 };
         let path = if self.path_match { 400 } else { 0 };
         let diagnostic = if self.diagnostic { 1_000 } else { 0 };
-        exact + path + diagnostic + u32::from(self.freshness)
+        exact
+            + u32::from(self.term_match_count) * 100
+            + path
+            + diagnostic
+            + u32::from(self.freshness)
     }
 
     /// Returns the nonzero components that make up [`Self::score`].
@@ -307,6 +314,12 @@ impl RelevanceSignals {
             components.push(ScoreComponent {
                 kind: ScoreComponentKind::ExactMatch,
                 value: 800,
+            });
+        }
+        if self.term_match_count > 0 {
+            components.push(ScoreComponent {
+                kind: ScoreComponentKind::QueryCoverage,
+                value: u32::from(self.term_match_count) * 100,
             });
         }
         if self.path_match {
@@ -337,6 +350,8 @@ impl RelevanceSignals {
 pub enum ScoreComponentKind {
     /// Exact term or symbol match.
     ExactMatch,
+    /// Distinct normalized query terms present in the candidate.
+    QueryCoverage,
     /// Named path or symbol-path match.
     PathMatch,
     /// Diagnostic evidence priority.

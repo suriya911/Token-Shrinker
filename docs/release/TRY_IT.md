@@ -38,6 +38,10 @@ Restart Codex, open this trusted project, and inspect its MCP servers. The proje
 
 Claude Code uses the same flow with `claude-code`; generated files are `.mcp.json` and `.claude/skills/token-shrinker/SKILL.md`. Supported names are `codex`, `claude-code`, `gemini`, `opencode`, and `aider`.
 
+The adapter JSON distinguishes direct server validation from client state. `serverProtocolValidated: true` does not mean the agent approved or connected to the project MCP server. For Claude, verify with `claude mcp get token-shrinker`. If the result reports `clientApproval: "required"`, run `claude mcp reset-project-choices`, restart Claude in the project, and approve `token-shrinker`; the installer never changes that consent decision.
+
+After one context build, call `token_shrinker_stats`. It should contain a `byte_upper_bound_v1` savings row with `eventCount` at least one while `contentTelemetry` remains `false`. `token_shrinker_capabilities` reports native model transport separately from the `native-process` execution capability.
+
 Remove only Token-Shrinker's owned fragments:
 
 ```powershell

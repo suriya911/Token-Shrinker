@@ -16,6 +16,8 @@ pub struct BaselineContext {
     pub warnings: Vec<ScanWarning>,
     /// Content-free repository counters.
     pub repository_trace: RepositoryTrace,
+    /// Conservative content count across all discovered, addressable candidates before packing.
+    pub discovered_tokens: u64,
 }
 
 /// Builds context using only the native repository provider and conservative token estimator.
@@ -33,23 +35,47 @@ pub fn build_baseline_context(
 ) -> Result<BaselineContext, RepositoryError> {
     let terms = query_terms(query);
     let provider = RepositoryProvider::open(root)?;
-    let scan = provider.scan(&RepositoryQuery {
-        path_hints: terms.clone(),
+    let query = RepositoryQuery {
+        path_hints: Vec::new(),
         terms,
-    })?;
-    let bundle = build_context(&scan.candidates, budget, &ConservativeEstimator);
+    };
+    // Keep large files useful under bounded requests: no chunk consumes more than half of a
+    // normal request budget, and stable #Lx-Ly handles remain fetchable by the repository provider.
+    let chunk_bytes = usize::try_from((budget.get() / 2).clamp(1, 2_048)).unwrap_or(2_048);
+    let scan = provider.scan_chunked(&query, chunk_bytes)?;
+    let relevant = scan
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.relevance.score() > 0)
+        .cloned()
+        .collect::<Vec<_>>();
+    let candidates = if relevant.is_empty() {
+        &scan.candidates
+    } else {
+        &relevant
+    };
+    let discovered_tokens = candidates.iter().fold(0_u64, |total, candidate| {
+        total.saturating_add(u64::try_from(candidate.content.len()).unwrap_or(u64::MAX))
+    });
+    let bundle = build_context(candidates, budget, &ConservativeEstimator);
     Ok(BaselineContext {
         bundle,
         warnings: scan.warnings,
         repository_trace: scan.trace,
+        discovered_tokens,
     })
 }
 
 fn query_terms(query: &str) -> Vec<String> {
+    const STOP_WORDS: &[&str] = &[
+        "and", "are", "for", "from", "how", "into", "the", "this", "use", "what", "when", "where",
+        "which", "with",
+    ];
     let mut terms = query
         .split(|character: char| !character.is_alphanumeric() && character != '_')
-        .filter(|term| term.chars().count() >= 2)
+        .filter(|term| term.chars().count() >= 3)
         .map(str::to_lowercase)
+        .filter(|term| !STOP_WORDS.contains(&term.as_str()))
         .collect::<Vec<_>>();
     terms.sort();
     terms.dedup();
@@ -1023,6 +1049,38 @@ mod tests {
             item.sensitivity != Sensitivity::Redacted || !item.content.contains("canary-secret")
         }));
         assert!(!first.repository_trace.cancelled);
+    }
+
+    #[test]
+    fn baseline_excludes_unmatched_noise_when_relevant_evidence_exists() {
+        let directory = tempfile::tempdir().expect("repository");
+        fs::write(
+            directory.path().join("launcher.ts"),
+            "export function resolveWindowsExecutable() { return 'token-shrinker.exe'; }",
+        )
+        .expect("relevant source");
+        fs::write(directory.path().join("noise.txt"), "unrelated filler").expect("noise source");
+        let result = build_baseline_context(
+            directory.path(),
+            "resolve Windows executable",
+            TokenBudget::from_u32(1_000).expect("budget"),
+        )
+        .expect("context");
+
+        assert!(
+            result
+                .bundle
+                .items
+                .iter()
+                .any(|item| item.location.uri == "launcher.ts")
+        );
+        assert!(
+            result
+                .bundle
+                .items
+                .iter()
+                .all(|item| item.location.uri != "noise.txt")
+        );
     }
 
     #[test]

@@ -471,6 +471,33 @@ impl RepositoryProvider {
         self.scan_cancellable(query, &AtomicBool::new(false))
     }
 
+    /// Discovers repository text and splits sources that exceed `max_chunk_bytes` into
+    /// deterministic, addressable line ranges. Chunk relevance is recalculated from the
+    /// contained text so a matching range can be ranked independently of the rest of its file.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RepositoryError`] when native discovery fails or the chunk bound is zero.
+    pub fn scan_chunked(
+        &self,
+        query: &RepositoryQuery,
+        max_chunk_bytes: usize,
+    ) -> Result<ScanResult, RepositoryError> {
+        if max_chunk_bytes == 0 {
+            return Err(RepositoryError::ZeroFileLimit);
+        }
+        let mut result = self.scan(query)?;
+        result.candidates = result
+            .candidates
+            .into_iter()
+            .flat_map(|candidate| chunk_candidate(candidate, query, max_chunk_bytes))
+            .collect();
+        result
+            .candidates
+            .sort_by(|left, right| left.source_id.cmp(&right.source_id));
+        Ok(result)
+    }
+
     /// Runs native text/path discovery first, then optionally adds bounded symbol snippets.
     ///
     /// # Errors
@@ -553,10 +580,12 @@ impl RepositoryProvider {
             }
             visited_files += 1;
             if is_likely_generated(&self.root, entry.path()) {
-                warnings.push(ScanWarning {
-                    path: display_path(entry.path()),
-                    kind: ScanWarningKind::Generated,
-                });
+                if !is_git_metadata(&self.root, entry.path()) {
+                    warnings.push(ScanWarning {
+                        path: display_path(entry.path()),
+                        kind: ScanWarningKind::Generated,
+                    });
+                }
                 continue;
             }
             match self.candidate_from_path(entry.path(), query) {
@@ -643,12 +672,10 @@ impl RepositoryProvider {
         let content = cached.content.clone();
         let path_lower = relative_text.to_lowercase();
         let content_lower = content.to_lowercase();
+        let term_match_count = matching_term_count(&content_lower, &query.terms);
         let relevance = RelevanceSignals {
-            exact_match: query
-                .terms
-                .iter()
-                .filter(|term| !term.is_empty())
-                .any(|term| content_lower.contains(&term.to_lowercase())),
+            exact_match: term_match_count > 0,
+            term_match_count,
             path_match: query
                 .path_hints
                 .iter()
@@ -988,6 +1015,60 @@ fn symbol_candidate(source: &ContextCandidate, span: SymbolSpan) -> Option<Conte
     })
 }
 
+fn chunk_candidate(
+    source: ContextCandidate,
+    query: &RepositoryQuery,
+    max_chunk_bytes: usize,
+) -> Vec<ContextCandidate> {
+    if source.content.len() <= max_chunk_bytes {
+        return vec![source];
+    }
+    let lines = source.content.lines().collect::<Vec<_>>();
+    let mut chunks = Vec::new();
+    let mut start = 0_usize;
+    while start < lines.len() {
+        let mut end = start;
+        let mut bytes = 0_usize;
+        while end < lines.len() {
+            let additional = lines[end].len() + usize::from(end + 1 < lines.len());
+            if end > start && bytes.saturating_add(additional) > max_chunk_bytes {
+                break;
+            }
+            bytes = bytes.saturating_add(additional);
+            end += 1;
+            if bytes >= max_chunk_bytes {
+                break;
+            }
+        }
+        let span = SymbolSpan {
+            start_line: u32::try_from(start + 1).unwrap_or(u32::MAX),
+            end_line: u32::try_from(end).unwrap_or(u32::MAX),
+        };
+        if let Some(mut chunk) = symbol_candidate(&source, span) {
+            let content_lower = chunk.content.to_lowercase();
+            chunk.relevance.term_match_count = matching_term_count(&content_lower, &query.terms);
+            chunk.relevance.exact_match = chunk.relevance.term_match_count > 0;
+            chunks.push(chunk);
+        }
+        start = end;
+    }
+    if chunks.is_empty() {
+        vec![source]
+    } else {
+        chunks
+    }
+}
+
+fn matching_term_count(content_lower: &str, terms: &[String]) -> u8 {
+    u8::try_from(
+        terms
+            .iter()
+            .filter(|term| !term.is_empty() && content_lower.contains(&term.to_lowercase()))
+            .count(),
+    )
+    .unwrap_or(u8::MAX)
+}
+
 fn parse_symbol_suffix(encoded: &str) -> Result<(&str, Option<SymbolSpan>), RepositoryError> {
     let Some((path, range)) = encoded.rsplit_once("#L") else {
         return Ok((encoded, None));
@@ -1028,6 +1109,7 @@ fn is_sensitive_key(key: &str) -> bool {
 
 fn is_likely_generated(root: &Path, path: &Path) -> bool {
     const EXCLUDED_DIRECTORIES: &[&str] = &[
+        ".git",
         "build",
         "dist",
         "generated",
@@ -1044,6 +1126,14 @@ fn is_likely_generated(root: &Path, path: &Path) -> bool {
                 EXCLUDED_DIRECTORIES.contains(&name.as_str())
             })
         })
+}
+
+fn is_git_metadata(root: &Path, path: &Path) -> bool {
+    path.strip_prefix(root).ok().is_some_and(|relative| {
+        relative
+            .components()
+            .any(|component| component.as_os_str() == ".git")
+    })
 }
 
 fn display_path(path: &Path) -> String {
@@ -1157,6 +1247,45 @@ mod tests {
     }
 
     #[test]
+    fn oversized_sources_become_rankable_fetchable_line_ranges() {
+        let directory = tempfile::tempdir().expect("repository");
+        let content = [
+            "fn unrelated_one() {}",
+            "fn unrelated_two() {}",
+            "fn windows_launcher_selects_exe() {}",
+            "fn unrelated_three() {}",
+        ]
+        .join("\n");
+        std::fs::write(directory.path().join("launcher.rs"), &content).expect("source");
+        let provider = RepositoryProvider::open(directory.path()).expect("provider");
+        let result = provider
+            .scan_chunked(
+                &RepositoryQuery {
+                    terms: vec!["windows_launcher_selects_exe".to_owned()],
+                    path_hints: vec![],
+                },
+                45,
+            )
+            .expect("chunked scan");
+
+        assert!(result.candidates.len() > 1);
+        let matching = result
+            .candidates
+            .iter()
+            .find(|candidate| candidate.relevance.exact_match)
+            .expect("matching range");
+        assert!(matching.source_id.as_str().contains("#L"));
+        assert!(matching.content.contains("windows_launcher_selects_exe"));
+        assert_eq!(
+            provider
+                .fetch(&matching.source_id)
+                .expect("fetch range")
+                .content,
+            matching.content
+        );
+    }
+
+    #[test]
     fn malicious_source_handle_cannot_escape_root() {
         let directory = tempfile::tempdir().expect("temporary repository");
         let provider = RepositoryProvider::open(directory.path()).expect("open repository");
@@ -1263,11 +1392,14 @@ mod tests {
         let directory = tempfile::tempdir().expect("temporary repository");
         fs::create_dir(directory.path().join("generated")).expect("create generated directory");
         fs::create_dir(directory.path().join("vendor")).expect("create vendor directory");
+        fs::create_dir(directory.path().join(".git")).expect("create Git metadata directory");
         fs::write(directory.path().join("source.rs"), "fn source() {}").expect("write source");
         fs::write(directory.path().join("generated/code.rs"), "generated")
             .expect("write generated source");
         fs::write(directory.path().join("vendor/dependency.rs"), "vendored")
             .expect("write vendored source");
+        fs::write(directory.path().join(".git/config"), "repository metadata")
+            .expect("write Git metadata");
         let provider = RepositoryProvider::open(directory.path()).expect("open repository");
 
         let result = provider

@@ -62,6 +62,11 @@ export async function runAdapterContract(definition) {
   const once = await readFile(configPath, "utf8");
   await applyAdapterPlan(await planAdapter(definition, "install", context));
   assert.equal(await readFile(configPath, "utf8"), once, "reinstall must be byte-idempotent");
+  const skillPath = dryRun.changes.find((change) => change.kind === "skill").path;
+  await writeFile(skillPath, "---\nname: token-shrinker\n---\n<!-- token-shrinker-owned:v0 -->\nold generated skill\n");
+  await applyAdapterPlan(await planAdapter(definition, "install", context));
+  assert.match(await readFile(skillPath, "utf8"), /A source ID or omission is not evidence/,
+    "owned generated skills must upgrade without bypassing ownership checks");
   assert.deepEqual(Object.fromEntries(providerKeys.map((key) => [key, process.env[key]])), envBefore);
   if (config.format === "json") {
     const installed = JSON.parse(once);

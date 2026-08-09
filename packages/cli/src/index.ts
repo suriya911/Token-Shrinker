@@ -10,10 +10,12 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 import {
   applyAdapterPlan,
+  inspectAdapterClientState,
   planAdapter,
   validateAdapter,
   type AdapterDefinition,
   type AdapterPlan,
+  type ClientApprovalState,
 } from "@token-shrinker/adapter-core";
 import { aiderAdapter } from "@token-shrinker/adapter-aider";
 import { claudeCodeAdapter } from "@token-shrinker/adapter-claude-code";
@@ -49,7 +51,11 @@ export interface AdapterCommandResult {
   action: "install" | "uninstall";
   applied: boolean;
   nativeTransportUnchanged: true;
-  validated: boolean;
+  /** Direct Token-Shrinker stdio protocol validation, not an agent-client connection check. */
+  serverProtocolValidated: boolean;
+  clientApproval: ClientApprovalState;
+  clientConnection: "not-checked";
+  clientStateDetail: string;
   changes: ReadonlyArray<{ path: string; kind: string; operation: string }>;
 }
 
@@ -108,23 +114,26 @@ export async function adapterCommand(args: readonly string[], options: AdapterCo
   const dryRun = args.includes("--dry-run");
   if (dryRun) return {
     adapter: definition.id, action, applied: false, nativeTransportUnchanged: true,
-    validated: false, changes,
+    serverProtocolValidated: false, clientApproval: "unknown", clientConnection: "not-checked",
+    clientStateDetail: "Dry run only; server protocol and agent-client state were not checked.", changes,
   };
 
   await applyAdapterPlan(plan);
-  let validated = false;
+  let serverProtocolValidated = false;
   if (action === "install" && options.validate !== false) {
     try {
       await validateAdapter(definition, context);
-      validated = true;
+      serverProtocolValidated = true;
     } catch (error) {
       await applyAdapterPlan(reversePlan(plan));
       throw new Error(`Adapter validation failed; all changes were rolled back: ${String(error)}`);
     }
   }
+  const clientState = await inspectAdapterClientState(definition, context);
   return {
     adapter: definition.id, action, applied: true, nativeTransportUnchanged: true,
-    validated, changes,
+    serverProtocolValidated, clientApproval: clientState.approval,
+    clientConnection: clientState.connection, clientStateDetail: clientState.detail, changes,
   };
 }
 
@@ -191,5 +200,8 @@ function renderAdapterResult(result: AdapterCommandResult): string {
     `- ${change.operation} ${change.kind}: ${change.path}`);
   return [`Token-Shrinker ${result.adapter} adapter ${state}.`,
     `Native model transport unchanged: ${result.nativeTransportUnchanged ? "yes" : "no"}`,
+    `Server protocol validated directly: ${result.serverProtocolValidated ? "yes" : "no"}`,
+    `Agent approval: ${result.clientApproval}; live connection: ${result.clientConnection}`,
+    result.clientStateDetail,
     ...lines].join("\n");
 }

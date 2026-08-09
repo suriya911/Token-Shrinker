@@ -329,12 +329,12 @@ fn terminate_process_tree(child: &mut Child) {
 
 #[cfg(windows)]
 fn terminate_process_tree(child: &mut Child) {
-    let _ = Command::new("taskkill")
+    let taskkill = Command::new("taskkill")
         .args(["/PID", &child.id().to_string(), "/T", "/F"])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
-    let _ = child.kill();
+        .output();
+    if !matches!(taskkill, Ok(output) if output.status.success()) {
+        let _ = child.kill();
+    }
 }
 
 fn read_bounded(mut reader: impl Read, cap: usize) -> io::Result<CapturedStream> {
@@ -558,12 +558,12 @@ mod tests {
                 let _ = grandchild.wait();
             }
             Ok("grandchild") => {
-                thread::sleep(Duration::from_millis(400));
-                fs::write(
-                    std::env::var("TS_EXEC_MARKER").expect("grandchild marker path"),
-                    "survived",
-                )
-                .expect("write survival marker");
+                let marker = std::env::var("TS_EXEC_MARKER").expect("grandchild marker path");
+                fs::write(format!("{marker}.ready"), "ready")
+                    .expect("write grandchild ready marker");
+                // Leave enough time for Windows taskkill startup under a loaded CI host.
+                thread::sleep(Duration::from_secs(2));
+                fs::write(marker, "survived").expect("write survival marker");
             }
             _ => {}
         }
@@ -643,6 +643,7 @@ mod tests {
         let executable = std::env::current_exe().expect("test executable");
         let engine = ExecutionEngine::new(policy(directory.path(), &executable, 128));
         let marker = directory.path().join("grandchild-survived.txt");
+        let ready = directory.path().join("grandchild-survived.txt.ready");
         let mut request = request(directory.path(), "tree");
         request.environment.insert(
             "TS_EXEC_MARKER".to_owned(),
@@ -651,7 +652,11 @@ mod tests {
         let cancelled = Arc::new(AtomicBool::new(false));
         let trigger = Arc::clone(&cancelled);
         let cancellation_thread = thread::spawn(move || {
-            thread::sleep(Duration::from_millis(100));
+            let deadline = Instant::now() + Duration::from_secs(2);
+            while !ready.exists() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(5));
+            }
+            assert!(ready.exists(), "grandchild never reached ready state");
             trigger.store(true, Ordering::Release);
         });
 
@@ -662,7 +667,7 @@ mod tests {
 
         assert_eq!(result.termination, TerminationReason::Cancelled);
         assert!(result.duration < Duration::from_secs(5));
-        thread::sleep(Duration::from_millis(600));
+        thread::sleep(Duration::from_millis(2_200));
         assert!(
             !marker.exists(),
             "grandchild survived process-tree cancellation"

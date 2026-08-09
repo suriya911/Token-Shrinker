@@ -24,6 +24,7 @@ fn candidates() -> Vec<ContextCandidate> {
             modified_unix_ms: None,
             relevance: RelevanceSignals {
                 exact_match: index % 10 == 0,
+                term_match_count: 0,
                 path_match: index % 5 == 0,
                 diagnostic: index % 25 == 0,
                 freshness: u8::try_from(index).expect("benchmark index fits u8"),

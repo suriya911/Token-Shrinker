@@ -176,6 +176,28 @@ impl fmt::Debug for TelemetryStore {
 }
 
 impl TelemetryStore {
+    /// Opens an isolated single-connection in-memory store.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TelemetryError`] when pool creation or migration fails.
+    pub fn open_in_memory() -> Result<Self, TelemetryError> {
+        let manager = SqliteConnectionManager::memory().with_init(|connection| {
+            connection.busy_timeout(Duration::from_secs(30))?;
+            connection.pragma_update(None, "foreign_keys", true)
+        });
+        let pool = Pool::builder()
+            .max_size(1)
+            .connection_timeout(Duration::from_secs(5))
+            .build(manager)
+            .map_err(TelemetryError::Pool)?;
+        {
+            let mut connection = pool.get().map_err(TelemetryError::Pool)?;
+            migrate(&mut connection)?;
+        }
+        Ok(Self { pool })
+    }
+
     /// Opens a file-backed pool and completes forward migration before returning.
     ///
     /// # Errors
