@@ -15,8 +15,8 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
-    "lint": "pnpm --filter @token-shrinker/sdk build && pnpm --filter @token-shrinker/adapter-core build && pnpm -r --if-present lint",
-    "typecheck": "pnpm --filter @token-shrinker/sdk build && pnpm --filter @token-shrinker/adapter-core build && pnpm -r --if-present typecheck",
+    "lint": "pnpm --filter @token-shrinker/sdk build && pnpm --filter \"./packages/adapter-*\" build && pnpm -r --if-present lint",
+    "typecheck": "pnpm --filter @token-shrinker/sdk build && pnpm --filter \"./packages/adapter-*\" build && pnpm -r --if-present typecheck",
     "check:fixture": "node scripts/verify-demo-fixture.mjs",
     "check:contracts": "node scripts/verify-m0-contracts.mjs",
     "check:reference": "node scripts/generate-reference.mjs --check",
