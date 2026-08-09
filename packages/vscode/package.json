@@ -8,6 +8,8 @@
     "type": "git",
     "url": "https://github.com/suriya911/Token-Shrinker.git"
   },
+  "homepage": "https://github.com/suriya911/Token-Shrinker#readme",
+  "bugs": "https://github.com/suriya911/Token-Shrinker/issues",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
@@ -76,10 +78,8 @@
     "test": "pnpm build && node --test test/*.mjs",
     "package": "pnpm build && vsce package --no-dependencies --out dist/token-shrinker.vsix"
   },
-  "dependencies": {
-    "@token-shrinker/sdk": "workspace:*"
-  },
   "devDependencies": {
+    "@token-shrinker/sdk": "workspace:*",
     "@types/vscode": "1.125.0",
     "@vscode/vsce": "3.9.2",
     "esbuild": "0.28.1"

@@ -32,3 +32,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Transactional, ownership-scoped Claude Code, Codex, Gemini CLI, OpenCode, and Aider adapters with portable skills, native-transport diagnostics, and live MCP validation.
 - Apache License 2.0 and project governance documents.
 - Accepted architecture decision records 0001–0013, including a staged daemon, reason-only routing, separated raw artifacts, downloader-free alpha packaging, and read-only v1 update checks.
+- Bundled VS Code commands, public benchmark evidence, and independent security/release review gates.
+- Agent adapters wired into the installed npm launcher with preview, atomic validation, rollback, and owned removal.
+- Clean-room release packaging, coordinated metadata checks, checksums, CycloneDX SBOM generation, and provenance-attested release-candidate CI.
+
+### Security
+
+- Native LLM provider transport remains unchanged by agent installation.
+- Published npm and VSIX artifacts include Apache-2.0 license material and exclude unintended runtime workspace dependencies.
+- Release publication remains disabled at the development version until registry ownership and protected release approval are confirmed.

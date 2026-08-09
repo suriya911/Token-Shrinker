@@ -1,8 +1,11 @@
 {
   "name": "@token-shrinker/cli-linux-x64-gnu",
   "version": "0.0.0",
+  "description": "Token-Shrinker native CLI binary for Linux x64 glibc.",
   "license": "Apache-2.0",
+  "repository": "https://github.com/suriya911/Token-Shrinker.git",
+  "publishConfig": { "access": "public" },
   "os": ["linux"],
   "cpu": ["x64"],
-  "files": ["bin"]
+  "files": ["bin", "LICENSE"]
 }

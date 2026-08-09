@@ -11,7 +11,7 @@ Token-Shrinker reduces the context and terminal output sent to an LLM while pres
 
 The project uses a Rust core for low-latency routing, ranking, execution, storage, and IPC. TypeScript provides the npm installer, JavaScript SDK, agent adapters, and VS Code integration.
 
-> **Project status:** design and implementation plan. APIs shown below are the target public contract until the first alpha release.
+> **Project status:** M7 engineering build complete; M8 release-candidate hardening is in progress. Registry packages and the Marketplace extension are not public until the M8 release gate passes.
 
 ## Why Token-Shrinker?
 
@@ -231,6 +231,8 @@ Managed transactional updates, rollback, background schedulers, and unattended a
 
 ### npm (recommended for agents and editors)
 
+After the M8 release candidate is published:
+
 ```bash
 npm install --global @token-shrinker/cli
 token-shrinker init
@@ -245,10 +247,7 @@ The npm launcher selects an exact-version optional platform package and never do
 
 ### Cargo
 
-```bash
-cargo install token-shrinker-cli
-token-shrinker init
-```
+The Rust crates are currently source-workspace components, not a promised crates.io install surface. Use npm for prebuilt releases or build from source. Public crate publishing may be added only after crate ownership and the full dependency graph are release-ready.
 
 ### From source
 
@@ -527,6 +526,8 @@ pnpm --filter ./packages/vscode package
 ```
 
 The second command creates `packages/vscode/dist/token-shrinker.vsix`. The M7 gate statically checks its manifest and contents; the [independent review packet](./docs/reviews/M7-independent-review.md) covers a clean-profile human smoke test before publication.
+
+For exact clean-install, agent, VSIX, uninstall, and publication steps, see the [release try-out guide](./docs/release/TRY_IT.md) and [publishing runbook](./docs/release/PUBLISHING.md).
 
 ## Continuous integration
 

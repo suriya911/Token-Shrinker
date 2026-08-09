@@ -52,6 +52,28 @@ importers:
         version: link:../adapter-core
 
   packages/cli:
+    devDependencies:
+      '@token-shrinker/adapter-aider':
+        specifier: workspace:*
+        version: link:../adapter-aider
+      '@token-shrinker/adapter-claude-code':
+        specifier: workspace:*
+        version: link:../adapter-claude-code
+      '@token-shrinker/adapter-codex':
+        specifier: workspace:*
+        version: link:../adapter-codex
+      '@token-shrinker/adapter-core':
+        specifier: workspace:*
+        version: link:../adapter-core
+      '@token-shrinker/adapter-gemini':
+        specifier: workspace:*
+        version: link:../adapter-gemini
+      '@token-shrinker/adapter-opencode':
+        specifier: workspace:*
+        version: link:../adapter-opencode
+      esbuild:
+        specifier: 0.28.1
+        version: 0.28.1
     optionalDependencies:
       '@token-shrinker/cli-darwin-arm64':
         specifier: workspace:*
@@ -77,11 +99,10 @@ importers:
   packages/sdk: {}
 
   packages/vscode:
-    dependencies:
+    devDependencies:
       '@token-shrinker/sdk':
         specifier: workspace:*
         version: link:../sdk
-    devDependencies:
       '@types/vscode':
         specifier: 1.125.0
         version: 1.125.0

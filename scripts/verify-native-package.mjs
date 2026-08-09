@@ -26,8 +26,10 @@ await access(binary);
 const versionRun = spawnSync(binary, ["version", "--json"], { encoding: "utf8" });
 assert.equal(versionRun.status, 0, versionRun.stderr);
 const version = JSON.parse(versionRun.stdout);
-assert.equal(version.binaryVersion, "0.0.0");
-assert.equal(version.packageVersion, "0.0.0");
+const cliManifest = JSON.parse(await readFile(resolve("packages", "cli", "package.json"), "utf8"));
+const releaseVersion = cliManifest.version;
+assert.equal(version.binaryVersion, releaseVersion);
+assert.equal(version.packageVersion, releaseVersion);
 assert.equal(version.protocolVersion, "1.0");
 assert.equal(version.schemaVersion, 1);
 
@@ -45,10 +47,11 @@ try {
   await mkdir(join(staging, "bin"), { recursive: true });
   await mkdir(output);
   await copyFile(binary, join(staging, "bin", executableName));
+  await copyFile(resolve("LICENSE"), join(staging, "LICENSE"));
   if (process.platform !== "win32") await chmod(join(staging, "bin", executableName), 0o755);
   await writeFile(join(staging, "package.json"), JSON.stringify({
-    name: packageName, version: "0.0.0", license: "Apache-2.0",
-    os: [process.platform], cpu: [process.arch], files: ["bin"],
+    name: packageName, version: releaseVersion, license: "Apache-2.0",
+    os: [process.platform], cpu: [process.arch], files: ["bin", "LICENSE"],
   }, null, 2));
   const packed = npmRun(["pack", "--json", "--pack-destination", output], staging);
   assert.equal(packed.status, 0, packed.stderr);
@@ -56,7 +59,8 @@ try {
   const listed = spawnSync("tar", ["-tzf", tarball], { encoding: "utf8" });
   assert.equal(listed.status, 0, listed.stderr);
   const files = listed.stdout.trim().split(/\r?\n/).sort();
-  assert.deepEqual(files, ["package/bin/" + executableName, "package/package.json"].sort());
+  assert.deepEqual(files, ["package/LICENSE", "package/bin/" + executableName,
+    "package/package.json"].sort());
   assert((await readFile(tarball)).byteLength > 0);
 
   const umbrella = join(directory, "umbrella");
@@ -64,12 +68,13 @@ try {
   for (const file of ["index.js", "index.js.map", "index.d.ts", "index.d.ts.map"]) {
     await copyFile(join("packages", "cli", "dist", file), join(umbrella, "dist", file));
   }
+  await copyFile(join("packages", "cli", "dist", "LICENSE"), join(umbrella, "dist", "LICENSE"));
   await copyFile(join("packages", "cli", "README.md"), join(umbrella, "README.md"));
   await writeFile(join(umbrella, "package.json"), JSON.stringify({
-    name: "@token-shrinker/cli", version: "0.0.0", type: "module",
+    name: "@token-shrinker/cli", version: releaseVersion, type: "module",
     license: "Apache-2.0", files: ["dist", "README.md"],
     bin: { "token-shrinker": "./dist/index.js" },
-    optionalDependencies: { [packageName]: "0.0.0" },
+    optionalDependencies: { [packageName]: releaseVersion },
   }, null, 2));
   const umbrellaPacked = npmRun(["pack", "--json", "--pack-destination", output], umbrella);
   assert.equal(umbrellaPacked.status, 0, umbrellaPacked.stderr);
@@ -78,7 +83,8 @@ try {
   assert.equal(umbrellaList.status, 0, umbrellaList.stderr);
   assert.deepEqual(umbrellaList.stdout.trim().split(/\r?\n/).sort(), [
     "package/README.md", "package/dist/index.d.ts", "package/dist/index.d.ts.map",
-    "package/dist/index.js", "package/dist/index.js.map", "package/package.json",
+    "package/dist/index.js", "package/dist/index.js.map", "package/dist/LICENSE",
+    "package/package.json",
   ].sort());
 
   const installation = join(directory, "install");
@@ -94,6 +100,18 @@ try {
     : spawnSync(shim, ["version", "--json"], { encoding: "utf8" });
   assert.equal(smoke.status, 0, smoke.stderr);
   assert.equal(JSON.parse(smoke.stdout).protocolVersion, "1.0");
+  const agentRoot = join(directory, "agent");
+  const launcher = join(installation, "node_modules", "@token-shrinker", "cli", "dist", "index.js");
+  await mkdir(agentRoot);
+  const add = spawnSync(process.execPath,
+    [launcher, "add", "codex", "--root", agentRoot, "--json"], { encoding: "utf8" });
+  assert.equal(add.status, 0, add.stderr);
+  assert.equal(JSON.parse(add.stdout).validated, true);
+  await access(join(agentRoot, ".codex", "config.toml"));
+  await access(join(agentRoot, ".agents", "skills", "token-shrinker", "SKILL.md"));
+  const remove = spawnSync(process.execPath,
+    [launcher, "remove", "codex", "--root", agentRoot, "--json"], { encoding: "utf8" });
+  assert.equal(remove.status, 0, remove.stderr);
   const uninstalled = npmRun(["uninstall", "@token-shrinker/cli", packageName], installation);
   assert.equal(uninstalled.status, 0, uninstalled.stderr);
   await assert.rejects(access(shim));

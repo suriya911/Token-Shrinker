@@ -5,9 +5,21 @@ import { createHash } from "node:crypto";
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
+import {
+  applyAdapterPlan,
+  planAdapter,
+  validateAdapter,
+  type AdapterDefinition,
+  type AdapterPlan,
+} from "@token-shrinker/adapter-core";
+import { aiderAdapter } from "@token-shrinker/adapter-aider";
+import { claudeCodeAdapter } from "@token-shrinker/adapter-claude-code";
+import { codexAdapter } from "@token-shrinker/adapter-codex";
+import { geminiAdapter } from "@token-shrinker/adapter-gemini";
+import { openCodeAdapter } from "@token-shrinker/adapter-opencode";
 
 const require = createRequire(import.meta.url);
 const PLATFORM_PACKAGES: Readonly<Record<string, string>> = {
@@ -16,6 +28,30 @@ const PLATFORM_PACKAGES: Readonly<Record<string, string>> = {
   "linux-x64": "@token-shrinker/cli-linux-x64-gnu",
   "win32-x64": "@token-shrinker/cli-win32-x64",
 };
+
+const ADAPTERS: Readonly<Record<string, AdapterDefinition>> = {
+  aider: aiderAdapter,
+  claude: claudeCodeAdapter,
+  "claude-code": claudeCodeAdapter,
+  codex: codexAdapter,
+  gemini: geminiAdapter,
+  opencode: openCodeAdapter,
+};
+
+export interface AdapterCommandOptions {
+  binaryPath?: string;
+  cwd?: string;
+  validate?: boolean;
+}
+
+export interface AdapterCommandResult {
+  adapter: string;
+  action: "install" | "uninstall";
+  applied: boolean;
+  nativeTransportUnchanged: true;
+  validated: boolean;
+  changes: ReadonlyArray<{ path: string; kind: string; operation: string }>;
+}
 
 export function platformPackage(platform = process.platform, arch = process.arch): string {
   const key = platform + "-" + arch;
@@ -52,6 +88,46 @@ export async function verifyBinaryChecksum(binaryPath: string, expectedSha256: s
   return difference === 0;
 }
 
+/** Applies a tested project-scoped agent adapter without changing model transport. */
+export async function adapterCommand(args: readonly string[], options: AdapterCommandOptions = {}):
+  Promise<AdapterCommandResult | null> {
+  const verb = args[0];
+  if (verb !== "add" && verb !== "remove") return null;
+  const requested = args[1];
+  const definition = requested ? ADAPTERS[requested] : undefined;
+  if (!definition) {
+    throw new Error("Unknown agent adapter. Supported adapters: " +
+      ["aider", "claude-code", "codex", "gemini", "opencode"].join(", "));
+  }
+  const action = verb === "add" ? "install" : "uninstall";
+  const root = option(args, "--root") ?? options.cwd ?? process.cwd();
+  const binaryPath = resolve(option(args, "--binary") ?? options.binaryPath ?? resolveBinary());
+  const context = { root, binaryPath };
+  const plan = await planAdapter(definition, action, context);
+  const changes = summarizeChanges(plan);
+  const dryRun = args.includes("--dry-run");
+  if (dryRun) return {
+    adapter: definition.id, action, applied: false, nativeTransportUnchanged: true,
+    validated: false, changes,
+  };
+
+  await applyAdapterPlan(plan);
+  let validated = false;
+  if (action === "install" && options.validate !== false) {
+    try {
+      await validateAdapter(definition, context);
+      validated = true;
+    } catch (error) {
+      await applyAdapterPlan(reversePlan(plan));
+      throw new Error(`Adapter validation failed; all changes were rolled back: ${String(error)}`);
+    }
+  }
+  return {
+    adapter: definition.id, action, applied: true, nativeTransportUnchanged: true,
+    validated, changes,
+  };
+}
+
 export async function launch(args = process.argv.slice(2)): Promise<number> {
   const child = spawn(resolveBinary(), args, { stdio: "inherit", windowsHide: false });
   const forward = (signal: NodeJS.Signals): void => {
@@ -72,8 +148,48 @@ export async function launch(args = process.argv.slice(2)): Promise<number> {
 
 const invokedPath = process.argv[1];
 if (invokedPath && realpathSync(invokedPath) === realpathSync(fileURLToPath(import.meta.url))) {
-  launch().then((code) => { process.exitCode = code; }).catch((error: unknown) => {
+  const args = process.argv.slice(2);
+  adapterCommand(args).then(async (result) => {
+    if (result) {
+      console.log(args.includes("--json") ? JSON.stringify(result) : renderAdapterResult(result));
+      return 0;
+    }
+    return launch(args);
+  }).then((code) => { process.exitCode = code; }).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
+}
+
+function option(args: readonly string[], name: string): string | undefined {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
+function summarizeChanges(plan: AdapterPlan): AdapterCommandResult["changes"] {
+  return plan.changes.filter((change) => change.before !== change.after).map((change) => ({
+    path: change.path,
+    kind: change.kind,
+    operation: change.after === null ? "remove" : change.before === null ? "create" : "update",
+  }));
+}
+
+function reversePlan(plan: AdapterPlan): AdapterPlan {
+  return {
+    ...plan,
+    changes: plan.changes.map((change) => ({
+      ...change,
+      before: change.after,
+      after: change.before,
+    })),
+  };
+}
+
+function renderAdapterResult(result: AdapterCommandResult): string {
+  const state = result.applied ? "applied" : "preview";
+  const lines = result.changes.map((change) =>
+    `- ${change.operation} ${change.kind}: ${change.path}`);
+  return [`Token-Shrinker ${result.adapter} adapter ${state}.`,
+    `Native model transport unchanged: ${result.nativeTransportUnchanged ? "yes" : "no"}`,
+    ...lines].join("\n");
 }

@@ -1,8 +1,22 @@
 {
   "name": "@token-shrinker/sdk",
   "version": "0.0.0",
+  "description": "TypeScript SDK for the local Token-Shrinker MCP and daemon transports.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suriya911/Token-Shrinker.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/suriya911/Token-Shrinker#readme",
+  "bugs": "https://github.com/suriya911/Token-Shrinker/issues",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist/index.js",
     "dist/index.js.map",
@@ -11,7 +25,8 @@
     "dist/protocol.js",
     "dist/protocol.js.map",
     "dist/protocol.d.ts",
-    "dist/protocol.d.ts.map"
+    "dist/protocol.d.ts.map",
+    "dist/LICENSE"
   ],
   "exports": {
     ".": {
@@ -20,7 +35,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"require('node:fs').copyFileSync('../../LICENSE','dist/LICENSE')\"",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm build && node --test test/*.mjs"

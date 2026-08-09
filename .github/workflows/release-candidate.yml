@@ -1,0 +1,121 @@
+name: Release candidate artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*-rc.*"
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build RC (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x64
+            primary: true
+            sbom: false
+          - os: macos-15-intel
+            target: macos-x64
+            primary: false
+            sbom: false
+          - os: macos-latest
+            target: macos-arm64
+            primary: false
+            sbom: false
+          - os: ubuntu-latest
+            target: linux-x64-gnu
+            primary: false
+            sbom: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9 # v6.0.8
+        with:
+          version: 11.16.0
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Activate pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify coordinated release metadata
+        shell: bash
+        run: |
+          node scripts/verify-release-metadata.mjs
+          node -e 'const p=require("./package.json"); if(p.version==="0.0.0") throw new Error("set an RC version before building release artifacts")'
+
+      - name: Build and test release surface
+        run: |
+          cargo build --release --bin token-shrinker
+          pnpm build
+          node scripts/verify-native-package.mjs --profile release
+
+      - name: Pack native npm artifact
+        run: node scripts/package-native.mjs --output release --profile release
+
+      - name: Pack umbrella npm, SDK, and VSIX
+        if: matrix.primary
+        shell: pwsh
+        run: |
+          pnpm --filter @token-shrinker/cli pack --pack-destination release
+          pnpm --filter @token-shrinker/sdk pack --pack-destination release
+          pnpm --filter ./packages/vscode package
+          Copy-Item packages/vscode/dist/token-shrinker.vsix release/token-shrinker.vsix
+
+      - name: Generate CycloneDX SBOM
+        if: matrix.sbom
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: release/token-shrinker.cdx.json
+          upload-artifact: false
+
+      - name: Write checksums
+        run: node scripts/write-checksums.mjs release
+
+      - name: Attest SBOM
+        if: matrix.sbom
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: release/*.tgz
+          sbom-path: release/token-shrinker.cdx.json
+
+      - name: Attest release artifacts
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: release/*
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: token-shrinker-${{ matrix.target }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14

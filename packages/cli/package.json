@@ -1,20 +1,35 @@
 {
   "name": "@token-shrinker/cli",
   "version": "0.0.0",
+  "description": "Native Token-Shrinker CLI with safe project-scoped agent integration.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suriya911/Token-Shrinker.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/suriya911/Token-Shrinker#readme",
+  "bugs": "https://github.com/suriya911/Token-Shrinker/issues",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist/index.js",
     "dist/index.js.map",
     "dist/index.d.ts",
     "dist/index.d.ts.map",
+    "dist/LICENSE",
     "README.md"
   ],
   "bin": {
     "token-shrinker": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json && esbuild src/index.ts --bundle --platform=node --format=esm --target=node24 --sourcemap --external:@token-shrinker/cli-* --outfile=dist/index.js && node -e \"require('node:fs').copyFileSync('../../LICENSE','dist/LICENSE')\"",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm build && node --test test/*.mjs"
@@ -24,5 +39,14 @@
     "@token-shrinker/cli-darwin-x64": "workspace:*",
     "@token-shrinker/cli-linux-x64-gnu": "workspace:*",
     "@token-shrinker/cli-win32-x64": "workspace:*"
+  },
+  "devDependencies": {
+    "@token-shrinker/adapter-aider": "workspace:*",
+    "@token-shrinker/adapter-claude-code": "workspace:*",
+    "@token-shrinker/adapter-codex": "workspace:*",
+    "@token-shrinker/adapter-core": "workspace:*",
+    "@token-shrinker/adapter-gemini": "workspace:*",
+    "@token-shrinker/adapter-opencode": "workspace:*",
+    "esbuild": "0.28.1"
   }
 }

@@ -1,8 +1,11 @@
 {
   "name": "@token-shrinker/cli-win32-x64",
   "version": "0.0.0",
+  "description": "Token-Shrinker native CLI binary for Windows x64.",
   "license": "Apache-2.0",
+  "repository": "https://github.com/suriya911/Token-Shrinker.git",
+  "publishConfig": { "access": "public" },
   "os": ["win32"],
   "cpu": ["x64"],
-  "files": ["bin"]
+  "files": ["bin", "LICENSE"]
 }

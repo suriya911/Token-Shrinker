@@ -1,8 +1,11 @@
 {
   "name": "@token-shrinker/cli-darwin-x64",
   "version": "0.0.0",
+  "description": "Token-Shrinker native CLI binary for macOS Intel.",
   "license": "Apache-2.0",
+  "repository": "https://github.com/suriya911/Token-Shrinker.git",
+  "publishConfig": { "access": "public" },
   "os": ["darwin"],
   "cpu": ["x64"],
-  "files": ["bin"]
+  "files": ["bin", "LICENSE"]
 }
