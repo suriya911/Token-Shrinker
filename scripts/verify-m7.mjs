@@ -38,7 +38,9 @@ if (report.providers.optionalProviders !== false) fail("optional provider must b
 
 const vsix = join("packages", "vscode", "dist", "token-shrinker.vsix");
 if (!existsSync(vsix)) fail("VSIX was not created");
-const listing = execFileSync("tar", ["-tf", vsix], { encoding: "utf8" }).replaceAll("\\", "/");
+const archiveCommand = process.platform === "win32" ? "tar" : "unzip";
+const listArgs = process.platform === "win32" ? ["-tf", vsix] : ["-Z1", vsix];
+const listing = execFileSync(archiveCommand, listArgs, { encoding: "utf8" }).replaceAll("\\", "/");
 for (const entry of ["extension.vsixmanifest", "extension/package.json", "extension/dist/index.js"]) {
   if (!listing.includes(entry)) fail(`VSIX lacks ${entry}`);
 }
@@ -47,7 +49,13 @@ for (const forbidden of ["extension/src/", "extension/test/", "extension/node_mo
 }
 
 const manifest = JSON.parse(
-  execFileSync("tar", ["-xOf", vsix, "extension/package.json"], { encoding: "utf8" }),
+  execFileSync(
+    archiveCommand,
+    process.platform === "win32"
+      ? ["-xOf", vsix, "extension/package.json"]
+      : ["-p", vsix, "extension/package.json"],
+    { encoding: "utf8" },
+  ),
 );
 if (manifest.capabilities?.untrustedWorkspaces?.supported !== "limited") {
   fail("VSIX does not declare limited untrusted-workspace support");
