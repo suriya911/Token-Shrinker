@@ -1,6 +1,6 @@
 {
   "name": "@token-shrinker/sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "TypeScript SDK for the local Token-Shrinker MCP and daemon transports.",
   "type": "module",
   "license": "Apache-2.0",

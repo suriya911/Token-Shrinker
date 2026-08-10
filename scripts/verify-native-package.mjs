@@ -103,22 +103,28 @@ try {
   const agentRoot = join(directory, "agent");
   const launcher = join(installation, "node_modules", "@token-shrinker", "cli", "dist", "index.js");
   await mkdir(agentRoot);
-  const add = spawnSync(process.execPath,
-    [launcher, "add", "codex", "--root", agentRoot, "--json"], { encoding: "utf8" });
-  assert.equal(add.status, 0, add.stderr);
-  const adapterResult = JSON.parse(add.stdout);
-  assert.equal(adapterResult.serverProtocolValidated, true);
-  assert.equal(adapterResult.clientApproval, "unknown");
-  assert.equal(adapterResult.clientConnection, "not-checked");
-  await access(join(agentRoot, ".codex", "config.toml"));
-  await access(join(agentRoot, ".agents", "skills", "token-shrinker", "SKILL.md"));
-  const remove = spawnSync(process.execPath,
-    [launcher, "remove", "codex", "--root", agentRoot, "--json"], { encoding: "utf8" });
-  assert.equal(remove.status, 0, remove.stderr);
+  const agents = [
+    ["codex", [".codex", "config.toml"], [".agents", "skills", "token-shrinker", "SKILL.md"]],
+    ["claude-code", [".mcp.json"], [".claude", "skills", "token-shrinker", "SKILL.md"]],
+  ];
+  for (const [agent, configPath, skillPath] of agents) {
+    const add = spawnSync(process.execPath,
+      [launcher, "add", agent, "--root", agentRoot, "--json"], { encoding: "utf8" });
+    assert.equal(add.status, 0, add.stderr);
+    const adapterResult = JSON.parse(add.stdout);
+    assert.equal(adapterResult.serverProtocolValidated, true);
+    assert.equal(adapterResult.clientApproval, "unknown");
+    assert.equal(adapterResult.clientConnection, "not-checked");
+    await access(join(agentRoot, ...configPath));
+    await access(join(agentRoot, ...skillPath));
+    const remove = spawnSync(process.execPath,
+      [launcher, "remove", agent, "--root", agentRoot, "--json"], { encoding: "utf8" });
+    assert.equal(remove.status, 0, remove.stderr);
+  }
   const uninstalled = npmRun(["uninstall", "@token-shrinker/cli", packageName], installation);
   assert.equal(uninstalled.status, 0, uninstalled.stderr);
   await assert.rejects(access(shim));
-  console.log("native packages install/smoke/uninstall verified:", basename(tarball));
+  console.log("native package and Codex/Claude install smoke verified:", basename(tarball));
 } finally {
   await rm(directory, { recursive: true, force: true });
 }

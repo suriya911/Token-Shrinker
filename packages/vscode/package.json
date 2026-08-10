@@ -3,7 +3,7 @@
   "displayName": "Token-Shrinker",
   "description": "Build bounded Token-Shrinker context from trusted VS Code workspaces.",
   "publisher": "token-shrinker",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/suriya911/Token-Shrinker.git"

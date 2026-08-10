@@ -5,6 +5,12 @@ import process from "node:process";
 
 const manifests = [
   "package.json",
+  "packages/adapter-aider/package.json",
+  "packages/adapter-claude-code/package.json",
+  "packages/adapter-codex/package.json",
+  "packages/adapter-core/package.json",
+  "packages/adapter-gemini/package.json",
+  "packages/adapter-opencode/package.json",
   "packages/cli/package.json",
   "packages/sdk/package.json",
   "packages/vscode/package.json",
@@ -28,6 +34,11 @@ for (const [path, manifest] of loaded) {
 const cargo = await readFile(resolve("Cargo.toml"), "utf8");
 assert.match(cargo, new RegExp(`\\[workspace\\.package\\][\\s\\S]*?version = "${
   releaseVersion.replaceAll(".", "\\.")}"`), "Cargo workspace version is not coordinated");
+
+const sdkSource = await readFile(resolve("packages/sdk/src/index.ts"), "utf8");
+assert.match(sdkSource, new RegExp(`clientInfo: \\{ name: "@token-shrinker/sdk", version: "${
+  releaseVersion.replaceAll(".", "\\.")}" \\}`),
+"SDK MCP client version is not coordinated");
 
 const cli = loaded.find(([path]) => path === "packages/cli/package.json")[1];
 assert.equal(cli.publishConfig?.access, "public");

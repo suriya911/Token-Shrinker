@@ -7,7 +7,7 @@
   "citationCorrectnessBasisPoints": 10000,
   "environment": {
     "arch": "x86_64",
-    "binaryVersion": "0.0.0",
+    "binaryVersion": "0.1.0",
     "os": "windows"
   },
   "fixture": "demo-repo",

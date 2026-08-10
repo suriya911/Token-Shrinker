@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-10
+
 ### Added
 
 - Initial Rust and pnpm workspace foundation.
@@ -40,4 +42,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Native LLM provider transport remains unchanged by agent installation.
 - Published npm and VSIX artifacts include Apache-2.0 license material and exclude unintended runtime workspace dependencies.
-- Release publication remains disabled at the development version until registry ownership and protected release approval are confirmed.
+- Release publication remains gated until registry ownership and protected release approval are confirmed.
