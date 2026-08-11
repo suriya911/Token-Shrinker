@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "token-shrinker-plugins",
+  "description": "Official Token-Shrinker plugins for Claude Code.",
+  "owner": {
+    "name": "Suriya Kathir"
+  },
+  "plugins": [
+    {
+      "name": "token-shrinker",
+      "source": "./plugins/claude/token-shrinker",
+      "description": "Build bounded, cited repository context with the local Token-Shrinker MCP server.",
+      "version": "0.1.0",
+      "category": "development",
+      "tags": ["context", "mcp", "tokens", "coding-agents"]
+    }
+  ]
+}

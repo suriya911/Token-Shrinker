@@ -231,10 +231,10 @@ Managed transactional updates, rollback, background schedulers, and unattended a
 
 ### npm (recommended for agents and editors)
 
-After the M8 release candidate is published:
+Install the public release:
 
 ```bash
-npm install --global @token-shrinker/cli
+npm install --global @token-shrinker/cli@0.1.0
 token-shrinker init
 token-shrinker doctor
 ```
@@ -244,6 +244,19 @@ The npm launcher selects an exact-version optional platform package and never do
 - Windows x64;
 - macOS x64 and arm64;
 - Linux x64 using glibc.
+
+### Claude Code plugin
+
+From Claude Code, add the official GitHub marketplace and install the plugin:
+
+```text
+/plugin marketplace add suriya911/Token-Shrinker
+/plugin install token-shrinker@token-shrinker-plugins
+```
+
+Restart Claude Code and approve the local `token-shrinker` MCP server when prompted. The plugin
+pins the matching public CLI and native package, so a separate global CLI installation is not
+required for the plugin.
 
 ### Cargo
 

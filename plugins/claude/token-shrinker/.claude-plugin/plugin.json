@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "token-shrinker",
+  "displayName": "Token-Shrinker",
+  "version": "0.1.0",
+  "description": "Build bounded, evidence-preserving repository context through a local MCP server.",
+  "author": {
+    "name": "Suriya Kathir",
+    "url": "https://github.com/suriya911"
+  },
+  "homepage": "https://github.com/suriya911/Token-Shrinker",
+  "repository": "https://github.com/suriya911/Token-Shrinker",
+  "license": "Apache-2.0",
+  "keywords": ["context", "mcp", "tokens", "coding-agents"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

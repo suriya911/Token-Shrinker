@@ -27,3 +27,19 @@ Large repository files are exposed to agents as deterministic `#Lx-Ly` ranges th
 The Aider adapter does not claim MCP support. Launch Aider with `aider --config .token-shrinker/aider.conf.yml` after generating the task context. Missing Token-Shrinker must be reported as an installation problem; adapters must not silently substitute a model proxy.
 
 Run `token-shrinker doctor --json` to see content-free warnings for provider endpoint overrides or wrapper recursion. Doctor reports names and remediation only; it never prints secret values or changes the environment.
+
+## Claude Code plugin marketplace
+
+The repository also publishes a Claude Code plugin marketplace from
+`.claude-plugin/marketplace.json`. The `token-shrinker` plugin bundles the portable skill and a
+local MCP definition. Its locked npm dependency installs the coordinated Token-Shrinker CLI and
+platform package with lifecycle scripts disabled.
+
+```text
+/plugin marketplace add suriya911/Token-Shrinker
+/plugin install token-shrinker@token-shrinker-plugins
+```
+
+The plugin is additive to the transactional project adapter. Use the marketplace plugin for a
+user-managed Claude installation; use `token-shrinker add claude-code` when a repository should
+own and version its generated MCP and skill configuration.

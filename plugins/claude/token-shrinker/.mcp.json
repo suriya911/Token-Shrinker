@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "token-shrinker": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/node_modules/@token-shrinker/cli/dist/index.js",
+        "start",
+        "--stdio"
+      ],
+      "env": {}
+    }
+  }
+}
