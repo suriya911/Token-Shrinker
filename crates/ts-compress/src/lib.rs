@@ -47,7 +47,15 @@ impl HeadroomProvider {
     /// Configures `headroom mcp serve` or a contract-compatible executable.
     #[must_use]
     pub fn new(command: PathBuf, base_args: Vec<String>, required: bool) -> Self {
-        let limits = ProviderLimits::default();
+        Self::with_limits(command, base_args, required, ProviderLimits::default())
+    }
+
+    fn with_limits(
+        command: PathBuf,
+        base_args: Vec<String>,
+        required: bool,
+        limits: ProviderLimits,
+    ) -> Self {
         let version_spec = ProviderSpec {
             id: "headroom".to_owned(),
             command: command.clone(),
@@ -779,13 +787,17 @@ mod tests {
 
     #[test]
     fn headroom_contract_validates_compression_schema() {
-        let provider = HeadroomProvider::new(
+        let provider = HeadroomProvider::with_limits(
             PathBuf::from("python"),
             vec![
                 fake_script().to_string_lossy().into_owned(),
                 "mcp-headroom".to_owned(),
             ],
             false,
+            ProviderLimits {
+                startup_timeout: Duration::from_secs(15),
+                ..ProviderLimits::default()
+            },
         );
         let result = provider.compress("long context").expect("compression");
         assert_eq!(result.provider, "headroom");
