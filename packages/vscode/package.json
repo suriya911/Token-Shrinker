@@ -2,6 +2,7 @@
   "name": "token-shrinker",
   "displayName": "Token-Shrinker",
   "description": "Build bounded Token-Shrinker context from trusted VS Code workspaces.",
+  "icon": "icon.png",
   "publisher": "token-shrinker",
   "version": "0.1.0",
   "repository": {
@@ -68,6 +69,7 @@
   },
   "files": [
     "dist",
+    "icon.png",
     "README.md",
     "LICENSE"
   ],
