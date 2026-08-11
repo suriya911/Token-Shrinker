@@ -1,0 +1,172 @@
+name: Publish npm packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9 # v6.0.8
+        with:
+          version: 11.16.0
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Activate pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify tag and coordinated release metadata
+        shell: bash
+        env:
+          TOKEN_SHRINKER_RELEASE_OWNER_ACK: "yes"
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+          node scripts/verify-release-metadata.mjs --publish
+
+      - name: Run release gate
+        run: pnpm check
+
+  stage-native:
+    name: Stage native npm (${{ matrix.target }})
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x64
+            package: cli-win32-x64
+          - os: macos-15-intel
+            target: macos-x64
+            package: cli-darwin-x64
+          - os: macos-latest
+            target: macos-arm64
+            package: cli-darwin-arm64
+          - os: ubuntu-latest
+            target: linux-x64-gnu
+            package: cli-linux-x64-gnu
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9 # v6.0.8
+        with:
+          version: 11.16.0
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install staged-publishing npm CLI
+        run: npm install --global npm@11.18.0
+
+      - name: Activate pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build native release
+        run: cargo build --release --bin token-shrinker
+
+      - name: Pack native npm artifact
+        run: node scripts/package-native.mjs --output release --profile release
+
+      - name: Stage native package with OIDC
+        shell: bash
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          PACKAGE="@token-shrinker/${{ matrix.package }}"
+          TARBALL="release/token-shrinker-${{ matrix.package }}-$VERSION.tgz"
+          if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
+            echo "$PACKAGE@$VERSION is already public; skipping"
+          else
+            npm stage publish "$TARBALL" --tag next
+          fi
+
+  stage-javascript:
+    name: Stage CLI and SDK npm
+    needs: stage-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@d15e628ca66d93ee5f352c71671a7bc6a97af5c9 # v6.0.8
+        with:
+          version: 11.16.0
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install staged-publishing npm CLI
+        run: npm install --global npm@11.18.0
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build npm packages
+        run: pnpm build
+
+      - name: Pack CLI and SDK
+        run: |
+          pnpm --filter @token-shrinker/cli pack --pack-destination release
+          pnpm --filter @token-shrinker/sdk pack --pack-destination release
+
+      - name: Stage CLI and SDK with OIDC
+        shell: bash
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          for PACKAGE in sdk cli; do
+            NAME="@token-shrinker/$PACKAGE"
+            TARBALL="release/token-shrinker-$PACKAGE-$VERSION.tgz"
+            if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+              echo "$NAME@$VERSION is already public; skipping"
+            else
+              npm stage publish "$TARBALL" --tag next
+              sleep 2
+            fi
+          done

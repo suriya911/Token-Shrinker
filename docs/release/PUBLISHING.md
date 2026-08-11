@@ -15,6 +15,31 @@ The release owner must complete these account-bound steps:
 
 Do not paste npm, GitHub, Microsoft, or signing credentials into repository files, issues, chat, logs, or command arguments.
 
+## Trusted npm staged publishing
+
+The tag workflow is `.github/workflows/publish-npm.yml`. It uses GitHub Actions OIDC and the protected `release` environment; it must not receive an `NPM_TOKEN` or `NODE_AUTH_TOKEN` secret.
+
+Configure the same trusted publisher on all six npm packages:
+
+- GitHub organization or user: `suriya911`
+- Repository: `Token-Shrinker`
+- Workflow filename: `publish-npm.yml`
+- Environment: `release`
+- Allowed action: staged publishing only
+
+Packages:
+
+- `@token-shrinker/cli-linux-x64-gnu`
+- `@token-shrinker/cli-darwin-arm64`
+- `@token-shrinker/cli-darwin-x64`
+- `@token-shrinker/cli-win32-x64`
+- `@token-shrinker/sdk`
+- `@token-shrinker/cli`
+
+Pushing a protected `v*` tag starts the workflow. The tag must equal `v` followed by the coordinated package version. The workflow verifies the complete release gate, stages all four native packages on their matching operating systems, then stages the SDK and umbrella CLI. It skips an exact version that is already public, so rerunning a completed tag is safe and cannot overwrite an npm version.
+
+After every job passes, inspect and approve the staged packages in this order: all four native packages, SDK, then CLI. Promote npm's `latest` tag only after a clean public installation verifies that the umbrella CLI resolves and launches the native binary on every supported platform.
+
 ## Release-candidate sequence
 
 1. Choose a coordinated version such as `1.0.0-rc.1`. VS Code Marketplace does not accept SemVer prerelease suffixes, so use a distinct numeric extension version and publish it with `vsce --pre-release`.
