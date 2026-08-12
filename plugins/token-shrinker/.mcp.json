@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "--yes",
-        "@token-shrinker/cli@0.1.0",
+        "@token-shrinker/cli@0.1.1",
         "start",
         "--stdio"
       ]

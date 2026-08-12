@@ -10,7 +10,7 @@
       "name": "token-shrinker",
       "source": "./plugins/claude/token-shrinker",
       "description": "Build bounded, cited repository context with the local Token-Shrinker MCP server.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "development",
       "tags": ["context", "mcp", "tokens", "coding-agents"]
     }
