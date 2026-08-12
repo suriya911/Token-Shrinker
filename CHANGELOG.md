@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-11
+
+### Added
+
+- Public Claude Code and Codex plugin marketplaces with pinned local MCP launchers and portable workflow skills.
+
+### Fixed
+
+- Explicitly named repository paths, including nested hidden files such as `.mcp.json`, now receive mandatory-evidence ranking and are retained under bounded context budgets.
+
 ## [0.1.0] - 2026-08-10
 
 ### Added

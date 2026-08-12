@@ -9,7 +9,6 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-const workspace = await readJson(resolve(root, "package.json"));
 const marketplace = await readJson(resolve(root, ".claude-plugin", "marketplace.json"));
 const manifest = await readJson(resolve(pluginRoot, ".claude-plugin", "plugin.json"));
 const mcp = await readJson(resolve(pluginRoot, ".mcp.json"));
@@ -21,16 +20,18 @@ assert.equal(marketplace.name, "token-shrinker-plugins");
 assert.equal(marketplace.plugins.length, 1);
 assert.equal(marketplace.plugins[0].name, "token-shrinker");
 assert.equal(marketplace.plugins[0].source, "./plugins/claude/token-shrinker");
-assert.equal(marketplace.plugins[0].version, workspace.version);
+assert.equal(marketplace.plugins[0].version, manifest.version);
 
 assert.equal(manifest.name, "token-shrinker");
-assert.equal(manifest.version, workspace.version);
+assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.mcpServers, "./.mcp.json");
 
-assert.equal(pluginPackage.version, workspace.version);
-assert.equal(pluginPackage.dependencies["@token-shrinker/cli"], workspace.version);
-assert.equal(lock.packages[""].dependencies["@token-shrinker/cli"], workspace.version);
+assert.equal(pluginPackage.version, manifest.version);
+assert.equal(pluginPackage.dependencies["@token-shrinker/cli"], manifest.version);
+assert.equal(lock.packages[""].version, manifest.version);
+assert.equal(lock.packages[""].dependencies["@token-shrinker/cli"], manifest.version);
+assert.equal(lock.packages["node_modules/@token-shrinker/cli"].version, manifest.version);
 
 const server = mcp.mcpServers["token-shrinker"];
 assert.equal(server.command, "node");

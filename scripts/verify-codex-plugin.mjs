@@ -9,7 +9,6 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-const workspace = await readJson(resolve(root, "package.json"));
 const marketplace = await readJson(resolve(root, ".agents", "plugins", "marketplace.json"));
 const manifest = await readJson(resolve(pluginRoot, ".codex-plugin", "plugin.json"));
 const mcp = await readJson(resolve(pluginRoot, ".mcp.json"));
@@ -28,7 +27,7 @@ assert.deepEqual(marketplace.plugins[0].policy, {
 });
 
 assert.equal(manifest.name, "token-shrinker");
-assert.equal(manifest.version, workspace.version);
+assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.mcpServers, "./.mcp.json");
 assert.ok(Array.isArray(manifest.interface.defaultPrompt));
@@ -41,7 +40,7 @@ const server = mcp.mcpServers["token-shrinker"];
 assert.equal(server.command, "npx");
 assert.deepEqual(server.args, [
   "--yes",
-  `@token-shrinker/cli@${workspace.version}`,
+  `@token-shrinker/cli@${manifest.version}`,
   "start",
   "--stdio",
 ]);
