@@ -62,6 +62,14 @@ assert.match(vscode.engines.vscode, /^>=1\./);
 assert(!vscode.dependencies?.["@token-shrinker/sdk"],
   "bundled VSIX must not retain a workspace runtime dependency");
 
+const publishWorkflow = await readFile(resolve(".github/workflows/publish-npm.yml"), "utf8");
+assert(publishWorkflow.includes(
+  'TARBALL="./release/token-shrinker-${{ matrix.package }}-$VERSION.tgz"'),
+"native staging tarball must be an explicit local package spec");
+assert(publishWorkflow.includes(
+  'TARBALL="./release/token-shrinker-$PACKAGE-$VERSION.tgz"'),
+"JavaScript staging tarball must be an explicit local package spec");
+
 if (process.argv.includes("--publish")) {
   assert.notEqual(releaseVersion, "0.0.0", "set an RC or stable version before publishing");
   assert(process.env.TOKEN_SHRINKER_RELEASE_OWNER_ACK === "yes",

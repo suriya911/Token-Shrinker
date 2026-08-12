@@ -112,7 +112,7 @@ jobs:
         run: |
           VERSION=$(node -p 'require("./package.json").version')
           PACKAGE="@token-shrinker/${{ matrix.package }}"
-          TARBALL="release/token-shrinker-${{ matrix.package }}-$VERSION.tgz"
+          TARBALL="./release/token-shrinker-${{ matrix.package }}-$VERSION.tgz"
           if npm view "$PACKAGE@$VERSION" version >/dev/null 2>&1; then
             echo "$PACKAGE@$VERSION is already public; skipping"
           else
@@ -162,7 +162,7 @@ jobs:
           VERSION=$(node -p 'require("./package.json").version')
           for PACKAGE in sdk cli; do
             NAME="@token-shrinker/$PACKAGE"
-            TARBALL="release/token-shrinker-$PACKAGE-$VERSION.tgz"
+            TARBALL="./release/token-shrinker-$PACKAGE-$VERSION.tgz"
             if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
               echo "$NAME@$VERSION is already public; skipping"
             else
