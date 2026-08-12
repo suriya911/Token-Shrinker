@@ -258,6 +258,18 @@ Restart Claude Code and approve the local `token-shrinker` MCP server when promp
 pins the matching public CLI and native package, so a separate global CLI installation is not
 required for the plugin.
 
+### Codex plugin
+
+From a terminal, add the repository marketplace and install the plugin:
+
+```bash
+codex plugin marketplace add suriya911/Token-Shrinker
+codex plugin add token-shrinker@token-shrinker-plugins
+```
+
+Start a new Codex task after installation. The plugin bundles the workflow skill and launches the
+exact public CLI version through npm without changing Codex's model endpoint or credentials.
+
 ### Cargo
 
 The Rust crates are currently source-workspace components, not a promised crates.io install surface. Use npm for prebuilt releases or build from source. Public crate publishing may be added only after crate ownership and the full dependency graph are release-ready.

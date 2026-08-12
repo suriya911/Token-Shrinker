@@ -43,3 +43,17 @@ platform package with lifecycle scripts disabled.
 The plugin is additive to the transactional project adapter. Use the marketplace plugin for a
 user-managed Claude installation; use `token-shrinker add claude-code` when a repository should
 own and version its generated MCP and skill configuration.
+
+## Codex plugin marketplace
+
+The same repository publishes a Codex marketplace from `.agents/plugins/marketplace.json`. Its
+plugin lives at `plugins/token-shrinker`, bundles the portable Token-Shrinker skill, and launches
+the exact public npm CLI version as a local stdio MCP server.
+
+```bash
+codex plugin marketplace add suriya911/Token-Shrinker
+codex plugin add token-shrinker@token-shrinker-plugins
+```
+
+Start a new Codex task after installation so the new skill and MCP tools are loaded. This plugin
+does not set provider base URLs, model credentials, or remote model transport.

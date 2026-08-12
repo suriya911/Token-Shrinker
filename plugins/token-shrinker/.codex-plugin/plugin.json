@@ -1,0 +1,43 @@
+{
+  "name": "token-shrinker",
+  "version": "0.1.0",
+  "description": "Build bounded, evidence-preserving repository context for Codex with local routing, memory, execution, and output controls.",
+  "author": {
+    "name": "Suriya Kathir",
+    "url": "https://github.com/suriya911"
+  },
+  "homepage": "https://github.com/suriya911/Token-Shrinker",
+  "repository": "https://github.com/suriya911/Token-Shrinker",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "context-engineering",
+    "mcp",
+    "token-optimization",
+    "local-first"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Token-Shrinker",
+    "shortDescription": "Build bounded, cited coding context",
+    "longDescription": "Route coding work, select bounded repository evidence, fetch exact sources, search local memory, run approved commands, and track estimated token savings through a local-first MCP server.",
+    "developerName": "Suriya Kathir",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/suriya911/Token-Shrinker",
+    "defaultPrompt": [
+      "Build cited context for this repository task",
+      "Route this coding task within a 6000-token budget",
+      "Show my local Token-Shrinker savings"
+    ],
+    "brandColor": "#00D4E8",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png",
+    "screenshots": []
+  }
+}
