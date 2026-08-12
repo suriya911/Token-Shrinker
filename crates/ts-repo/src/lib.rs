@@ -1247,6 +1247,30 @@ mod tests {
     }
 
     #[test]
+    fn nested_hidden_mcp_file_is_discovered_and_path_matched() {
+        let directory = tempfile::tempdir().expect("temporary repository");
+        let plugin = directory.path().join("plugins/claude/token-shrinker");
+        fs::create_dir_all(&plugin).expect("create plugin directory");
+        fs::write(plugin.join(".mcp.json"), r#"{"mcpServers":{}}"#)
+            .expect("write MCP configuration");
+        let provider = RepositoryProvider::open(directory.path()).expect("open repository");
+
+        let result = provider
+            .scan(&RepositoryQuery {
+                terms: vec!["mcp".to_owned()],
+                path_hints: vec!["plugins/claude/token-shrinker/.mcp.json".to_owned()],
+            })
+            .expect("scan repository");
+        let candidate = result
+            .candidates
+            .iter()
+            .find(|candidate| candidate.location.uri == "plugins/claude/token-shrinker/.mcp.json")
+            .expect("hidden MCP candidate");
+
+        assert!(candidate.relevance.path_match);
+    }
+
+    #[test]
     fn oversized_sources_become_rankable_fetchable_line_ranges() {
         let directory = tempfile::tempdir().expect("repository");
         let content = [

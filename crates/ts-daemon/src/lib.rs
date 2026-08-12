@@ -34,11 +34,9 @@ pub fn build_baseline_context(
     budget: TokenBudget,
 ) -> Result<BaselineContext, RepositoryError> {
     let terms = query_terms(query);
+    let path_hints = query_path_hints(query);
     let provider = RepositoryProvider::open(root)?;
-    let query = RepositoryQuery {
-        path_hints: Vec::new(),
-        terms,
-    };
+    let query = RepositoryQuery { path_hints, terms };
     // Keep large files useful under bounded requests: no chunk consumes more than half of a
     // normal request budget, and stable #Lx-Ly handles remain fetchable by the repository provider.
     let chunk_bytes = usize::try_from((budget.get() / 2).clamp(1, 2_048)).unwrap_or(2_048);
@@ -80,6 +78,35 @@ fn query_terms(query: &str) -> Vec<String> {
     terms.sort();
     terms.dedup();
     terms
+}
+
+fn query_path_hints(query: &str) -> Vec<String> {
+    const FILE_SUFFIXES: &[&str] = &[
+        ".cjs", ".js", ".json", ".lock", ".md", ".mjs", ".rs", ".toml", ".ts", ".tsx", ".txt",
+        ".xml", ".yaml", ".yml",
+    ];
+    let mut hints = query
+        .split_whitespace()
+        .filter_map(|raw| {
+            let trimmed = raw.trim_matches(|character: char| {
+                matches!(
+                    character,
+                    '"' | '\'' | '`' | '(' | ')' | '[' | ']' | '{' | '}' | ',' | ';' | ':'
+                )
+            });
+            let trimmed = trimmed.trim_end_matches(['.', ',', ';', ':']);
+            if trimmed.is_empty() || trimmed.contains("://") {
+                return None;
+            }
+            let normalized = trimmed.replace('\\', "/");
+            let lower = normalized.to_ascii_lowercase();
+            (normalized.contains('/') || FILE_SUFFIXES.iter().any(|suffix| lower.ends_with(suffix)))
+                .then_some(lower)
+        })
+        .collect::<Vec<_>>();
+    hints.sort();
+    hints.dedup();
+    hints
 }
 
 use fs4::FileExt;
@@ -1089,6 +1116,56 @@ mod tests {
             query_terms("Session, AUTH session x"),
             vec!["auth", "session"]
         );
+    }
+
+    #[test]
+    fn query_paths_are_normalized_deduplicated_and_stable() {
+        assert_eq!(
+            query_path_hints(
+                "Prioritize `plugins\\claude\\token-shrinker\\.mcp.json`, package.json, \
+                 package-lock.json, and https://example.com/not-a-repository-path."
+            ),
+            vec![
+                "package-lock.json",
+                "package.json",
+                "plugins/claude/token-shrinker/.mcp.json",
+            ]
+        );
+    }
+
+    #[test]
+    fn explicitly_named_hidden_path_outranks_broad_matching_documentation() {
+        let directory = tempfile::tempdir().expect("repository");
+        let plugin = directory.path().join("plugins/claude/token-shrinker");
+        fs::create_dir_all(&plugin).expect("plugin directory");
+        fs::write(
+            plugin.join(".mcp.json"),
+            r#"{"mcpServers":{"token-shrinker":{"command":"node"}}}"#,
+        )
+        .expect("hidden MCP file");
+        fs::write(
+            directory.path().join("README.md"),
+            "Claude marketplace plugin installs and launches Token-Shrinker through MCP. "
+                .repeat(20),
+        )
+        .expect("broad documentation");
+
+        let result = build_baseline_context(
+            directory.path(),
+            "Explain the Claude marketplace plugin. Prioritize \
+             plugins/claude/token-shrinker/.mcp.json.",
+            TokenBudget::from_u32(300).expect("budget"),
+        )
+        .expect("context");
+
+        assert_eq!(result.bundle.items.len(), 1);
+        assert_eq!(
+            result.bundle.items[0].location.uri,
+            "plugins/claude/token-shrinker/.mcp.json"
+        );
+        assert!(result.bundle.items[0].score_breakdown.iter().any(
+            |component| component.kind == token_shrinker_context::ScoreComponentKind::PathMatch
+        ));
     }
 
     fn daemon_config(path: &Path) -> DaemonConfig {

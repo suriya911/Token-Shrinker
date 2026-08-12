@@ -297,7 +297,9 @@ impl RelevanceSignals {
     #[must_use]
     pub fn score(self) -> u32 {
         let exact = if self.exact_match { 800 } else { 0 };
-        let path = if self.path_match { 400 } else { 0 };
+        // An explicitly named path is mandatory evidence for the request. Keep it above the
+        // maximum normal query-coverage score so broad prose cannot crowd it out of the budget.
+        let path = if self.path_match { 4_000 } else { 0 };
         let diagnostic = if self.diagnostic { 1_000 } else { 0 };
         exact
             + u32::from(self.term_match_count) * 100
@@ -325,7 +327,7 @@ impl RelevanceSignals {
         if self.path_match {
             components.push(ScoreComponent {
                 kind: ScoreComponentKind::PathMatch,
-                value: 400,
+                value: 4_000,
             });
         }
         if self.diagnostic {
