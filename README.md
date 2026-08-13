@@ -11,7 +11,7 @@ Token-Shrinker reduces the context and terminal output sent to an LLM while pres
 
 The project uses a Rust core for low-latency routing, ranking, execution, storage, and IPC. TypeScript provides the npm installer, JavaScript SDK, agent adapters, and VS Code integration.
 
-> **Project status:** M7 engineering build complete; M8 release-candidate hardening is in progress. Registry packages and the Marketplace extension are not public until the M8 release gate passes.
+> **Project status:** v0.1.1 is public on every shipping surface — npm (`latest` and `next` both point to 0.1.1), the Claude Code and Codex marketplace plugins, and the Visual Studio Marketplace extension. Rust crates are not published. M8 release-candidate hardening toward `v1.0.0` is in progress.
 
 ## Why Token-Shrinker?
 
@@ -234,7 +234,7 @@ Managed transactional updates, rollback, background schedulers, and unattended a
 Install the public release:
 
 ```bash
-npm install --global @token-shrinker/cli@0.1.0
+npm install --global @token-shrinker/cli@0.1.1
 token-shrinker init
 token-shrinker doctor
 ```
@@ -545,12 +545,20 @@ See [SECURITY.md](./SECURITY.md) for vulnerability reporting and the [threat mod
 
 The thin extension uses the TypeScript SDK and launches the configured native binary directly, without a shell or model-provider proxy. It exposes context build, status, and statistics commands. In an untrusted workspace only status is allowed; repository-reading commands remain blocked until the user grants trust.
 
+Install the published extension from the Visual Studio Marketplace:
+
+```bash
+code --install-extension token-shrinker.token-shrinker
+```
+
+Or build and package it from source:
+
 ```bash
 pnpm --filter ./packages/vscode test
 pnpm --filter ./packages/vscode package
 ```
 
-The second command creates `packages/vscode/dist/token-shrinker.vsix`. The M7 gate statically checks its manifest and contents; the [independent review packet](./docs/reviews/M7-independent-review.md) covers a clean-profile human smoke test before publication.
+The package command creates `packages/vscode/dist/token-shrinker.vsix`. The M7 gate statically checks its manifest and contents; the [independent review packet](./docs/reviews/M7-independent-review.md) covers a clean-profile human smoke test before publication.
 
 For exact clean-install, agent, VSIX, uninstall, and publication steps, see the [release try-out guide](./docs/release/TRY_IT.md) and [publishing runbook](./docs/release/PUBLISHING.md).
 
@@ -581,7 +589,8 @@ Recommended order for the core product: MCP Inspector and Criterion.rs first, th
 - [x] M5: Claude Code, Codex CLI, Gemini CLI, OpenCode, and Aider adapters
 - [x] M6: Graphify, Headroom, RTK, Claude-Mem/external MCP memory adapters
 - [x] M7: VS Code extension, public demo, benchmark report, and security review
-- [ ] M8: release candidates, compatibility freeze, and `v1.0.0`
+- [x] v0.1.1: public npm release (`@token-shrinker/cli`, `@token-shrinker/sdk`, native packages), Claude/Codex marketplace plugins, and Visual Studio Marketplace extension published
+- [ ] M8: compatibility freeze, changelog/migration guide, signed provenance, clean-machine tests, 24h soak, and `v1.0.0`
 - [ ] Post-v1: transactional managed updater, rollback, compatibility watcher, and opt-in scheduler
 
 Detailed tasks, dependencies, gates, and acceptance criteria are in [BUILD_PLAN.md](./BUILD_PLAN.md).
@@ -607,7 +616,8 @@ Third-party optional tools retain their own licenses and are not bundled unless 
 ## Publication coordinates
 
 - Repository: `https://github.com/suriya911/Token-Shrinker`
-- npm scope: `@token-shrinker/*`; registry ownership must be verified during M8
+- npm scope: `@token-shrinker/*`; ownership verified, packages public at 0.1.1
+- VS Code extension: `token-shrinker.token-shrinker`, public at 0.1.1
 - Rust crate names: registry ownership must be verified during M8
 - Maintainer and release owner: GitHub user `suriya911` during pre-alpha
 - Security reports: GitHub private vulnerability reporting, with private profile contact as fallback
