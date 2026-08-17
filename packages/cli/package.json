@@ -1,6 +1,6 @@
 {
   "name": "@token-shrinker/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Native Token-Shrinker CLI with safe project-scoped agent integration.",
   "type": "module",
   "license": "Apache-2.0",

@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-17
+
+### Changed
+
+- Coordinated the Rust workspace, npm packages, Claude/Codex plugins, and VS Code extension at version 0.1.3.
+- Updated published plugin launchers to use the 0.1.3 npm CLI.
+
 ## [0.1.2] - 2026-08-17
 
 ### Fixed

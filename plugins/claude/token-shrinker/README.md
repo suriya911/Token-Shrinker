@@ -21,5 +21,5 @@ Restart Claude Code, approve the local `token-shrinker` MCP server when prompted
 /mcp
 ```
 
-The plugin pins `@token-shrinker/cli@0.1.2`. Claude Code installs its dependencies with lifecycle
+The plugin pins `@token-shrinker/cli@0.1.3`. Claude Code installs its dependencies with lifecycle
 scripts disabled; Token-Shrinker's npm launcher selects the matching prebuilt native package.

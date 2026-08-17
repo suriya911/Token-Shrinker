@@ -3,9 +3,23 @@
 This guide covers moving between published Token-Shrinker versions. Each section lists
 required actions, observable behavior changes, and anything that is safe to ignore.
 
-Released versions to date are `0.1.0` and `0.1.1`. Both are pre-`1.0` alpha releases.
+Released versions to date are `0.1.0`, `0.1.1`, `0.1.2`, and `0.1.3`. All are pre-`1.0` alpha releases.
 Until `1.0.0` ships, the compatibility guarantees in [Compatibility policy](#compatibility-policy)
 describe intent rather than a frozen contract.
+
+## 0.1.2 to 0.1.3
+
+`0.1.3` is a coordinated patch release. There are no protocol, schema, database, or
+configuration migrations. Update the installed surface you use and verify the reported
+binary/package versions are both `0.1.3`.
+
+```bash
+npm install --global @token-shrinker/cli@0.1.3
+code --install-extension token-shrinker.token-shrinker
+```
+
+Refresh the Claude Code and Codex marketplaces, reinstall the Token-Shrinker plugin, then
+run `token-shrinker version --json` and `token-shrinker doctor --json`.
 
 ## 0.1.0 to 0.1.1
 
