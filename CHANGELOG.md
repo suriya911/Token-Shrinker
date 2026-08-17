@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - Public Claude Code and Codex plugin marketplaces with pinned local MCP launchers and portable workflow skills.
+- Public distribution on npm (`@token-shrinker/cli`, `@token-shrinker/sdk`, and the four native platform packages) and on the Visual Studio Marketplace as `token-shrinker.token-shrinker`.
 
 ### Fixed
 
@@ -52,4 +53,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Native LLM provider transport remains unchanged by agent installation.
 - Published npm and VSIX artifacts include Apache-2.0 license material and exclude unintended runtime workspace dependencies.
-- Release publication remains gated until registry ownership and protected release approval are confirmed.
+- npm scope ownership and Visual Studio Marketplace publisher ownership are confirmed; crates.io publication remains gated until crate ownership is verified.

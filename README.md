@@ -560,7 +560,7 @@ pnpm --filter ./packages/vscode package
 
 The package command creates `packages/vscode/dist/token-shrinker.vsix`. The M7 gate statically checks its manifest and contents; the [independent review packet](./docs/reviews/M7-independent-review.md) covers a clean-profile human smoke test before publication.
 
-For exact clean-install, agent, VSIX, uninstall, and publication steps, see the [release try-out guide](./docs/release/TRY_IT.md) and [publishing runbook](./docs/release/PUBLISHING.md).
+For exact clean-install, agent, VSIX, uninstall, and publication steps, see the [release try-out guide](./docs/release/TRY_IT.md) and [publishing runbook](./docs/release/PUBLISHING.md). For version-to-version upgrade and downgrade steps, see the [migration guide](./docs/release/MIGRATION.md).
 
 ## Continuous integration
 
