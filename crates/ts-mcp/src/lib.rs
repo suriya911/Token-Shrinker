@@ -598,33 +598,33 @@ fn resolve_program_path(program: &Path) -> PathBuf {
     let Some(path) = env::var_os("PATH") else {
         return program.to_owned();
     };
-    let mut candidates = vec![program.to_owned()];
     #[cfg(windows)]
-    {
-        let extensions = env::var_os("PATHEXT")
-            .map(|value| {
-                value
-                    .to_string_lossy()
-                    .split(';')
-                    .filter(|extension| !extension.is_empty())
-                    .map(str::to_owned)
-                    .collect::<Vec<_>>()
-            })
-            .filter(|extensions| !extensions.is_empty())
-            .unwrap_or_else(|| {
-                vec![
-                    ".COM".to_owned(),
-                    ".EXE".to_owned(),
-                    ".BAT".to_owned(),
-                    ".CMD".to_owned(),
-                ]
-            });
-        candidates.extend(
-            extensions.into_iter().map(|extension| {
+    let extensions = env::var_os("PATHEXT")
+        .map(|value| {
+            value
+                .to_string_lossy()
+                .split(';')
+                .filter(|extension| !extension.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
+        .filter(|extensions| !extensions.is_empty())
+        .unwrap_or_else(|| {
+            vec![
+                ".COM".to_owned(),
+                ".EXE".to_owned(),
+                ".BAT".to_owned(),
+                ".CMD".to_owned(),
+            ]
+        });
+    #[cfg(not(windows))]
+    let extensions: Vec<String> = Vec::new();
+    let candidates =
+        std::iter::once(program.to_owned())
+            .chain(extensions.into_iter().map(|extension| {
                 PathBuf::from(format!("{}{}", program.to_string_lossy(), extension))
-            }),
-        );
-    }
+            }))
+            .collect::<Vec<_>>();
     for directory in env::split_paths(&path) {
         for candidate in &candidates {
             let resolved = directory.join(candidate);
