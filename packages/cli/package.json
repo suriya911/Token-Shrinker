@@ -47,6 +47,6 @@
     "@token-shrinker/adapter-core": "workspace:*",
     "@token-shrinker/adapter-gemini": "workspace:*",
     "@token-shrinker/adapter-opencode": "workspace:*",
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.2"
   }
 }
