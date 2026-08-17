@@ -547,6 +547,7 @@ struct ExecuteParams {
 }
 fn execute(value: &Value, cancelled: &AtomicBool) -> Result<Value, ServiceError> {
     let params: ExecuteParams = deserialize(value)?;
+    let program = resolve_program_path(&params.program);
     let environment_keys = params.environment.keys().cloned().chain([
         "PATH".to_owned(),
         "SYSTEMROOT".to_owned(),
@@ -555,7 +556,7 @@ fn execute(value: &Value, cancelled: &AtomicBool) -> Result<Value, ServiceError>
         "TMP".to_owned(),
     ]);
     let policy = ExecutionPolicy::new(
-        [params.program.clone()],
+        [program.clone()],
         Vec::new(),
         [params.working_directory.clone()],
         environment_keys,
@@ -567,7 +568,7 @@ fn execute(value: &Value, cancelled: &AtomicBool) -> Result<Value, ServiceError>
     let result = ExecutionEngine::new(policy)
         .execute(
             &ExecutionRequest {
-                program: params.program,
+                program,
                 args: params.args,
                 working_directory: params.working_directory,
                 environment: params.environment,
@@ -585,6 +586,54 @@ fn execute(value: &Value, cancelled: &AtomicBool) -> Result<Value, ServiceError>
     Ok(
         json!({"command":result.command,"exitCode":result.exit_code,"termination":termination,"durationMs":result.duration.as_millis(),"stdout":{"text":String::from_utf8_lossy(&result.stdout.retained_bytes()),"totalBytes":result.stdout.total_bytes,"truncated":result.stdout.truncated},"stderr":{"text":String::from_utf8_lossy(&result.stderr.retained_bytes()),"totalBytes":result.stderr.total_bytes,"truncated":result.stderr.truncated},"summary":summary}),
     )
+}
+
+/// Resolve a bare executable name through the inherited PATH while preserving
+/// explicit paths exactly. Execution remains argument-array based; no shell is
+/// introduced by this convenience resolution.
+fn resolve_program_path(program: &Path) -> PathBuf {
+    if program.is_absolute() || program.components().count() > 1 {
+        return program.to_owned();
+    }
+    let Some(path) = env::var_os("PATH") else {
+        return program.to_owned();
+    };
+    let mut candidates = vec![program.to_owned()];
+    #[cfg(windows)]
+    {
+        let extensions = env::var_os("PATHEXT")
+            .map(|value| {
+                value
+                    .to_string_lossy()
+                    .split(';')
+                    .filter(|extension| !extension.is_empty())
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>()
+            })
+            .filter(|extensions| !extensions.is_empty())
+            .unwrap_or_else(|| {
+                vec![
+                    ".COM".to_owned(),
+                    ".EXE".to_owned(),
+                    ".BAT".to_owned(),
+                    ".CMD".to_owned(),
+                ]
+            });
+        candidates.extend(
+            extensions.into_iter().map(|extension| {
+                PathBuf::from(format!("{}{}", program.to_string_lossy(), extension))
+            }),
+        );
+    }
+    for directory in env::split_paths(&path) {
+        for candidate in &candidates {
+            let resolved = directory.join(candidate);
+            if resolved.is_file() {
+                return resolved;
+            }
+        }
+    }
+    program.to_owned()
 }
 
 #[derive(Deserialize)]
@@ -788,6 +837,20 @@ fn mcp_error(id: &Value, code: i32, message: &str) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn explicit_program_paths_are_preserved() {
+        let program = PathBuf::from("relative/tool");
+        assert_eq!(resolve_program_path(&program), program);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn bare_windows_program_names_resolve_through_path() {
+        let resolved = resolve_program_path(Path::new("PowerShell"));
+        assert!(resolved.is_absolute());
+        assert!(resolved.is_file());
+    }
 
     fn request(method: &str, params: Value) -> RpcRequest {
         RpcRequest {
