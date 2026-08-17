@@ -1,6 +1,6 @@
 {
   "name": "token-shrinker",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Build bounded, evidence-preserving repository context for Codex with local routing, memory, execution, and output controls.",
   "author": {
     "name": "Suriya Kathir",
