@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-17
+
+### Fixed
+
+- MCP execution resolves bare executable names through `PATH`, so approved commands such as `PowerShell` work without requiring a hard-coded platform path.
+
 ## [0.1.1] - 2026-08-11
 
 ### Added
