@@ -12,7 +12,8 @@ test("portable skill preserves evidence and scopes concise formatting", () => {
   assert(skill.startsWith("---\nname: token-shrinker\n"));
   for (const required of ["warnings", "citations", "commands", "uncertainty",
     "only for the final human response", "user approves", "native model transport",
-    "A source ID or omission is not evidence", "Never infer implementation details"]) {
+    "A source ID or omission is not evidence", "Never infer implementation details",
+    "token_shrinker_record_tokens", "precision: \"exact\""]) {
     assert(skill.includes(required), required);
   }
   assert(aiderContext().includes("read-only context"));
