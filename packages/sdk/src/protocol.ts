@@ -5,6 +5,8 @@ export const MCP_PROTOCOL_VERSION = "2025-11-25" as const;
 export type ToolName =
   | "token_shrinker_capabilities"
   | "token_shrinker_route"
+  | "token_shrinker_task_status"
+  | "token_shrinker_task_update"
   | "token_shrinker_build_context"
   | "token_shrinker_fetch_source"
   | "token_shrinker_search_memory"

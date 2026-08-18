@@ -18,6 +18,22 @@ Select and explain FAST, BUILD, or DEEP using deterministic rules.
 - Destructive: `false`
 - Idempotent: `true`
 
+## `token_shrinker_task_status`
+
+Read the project-local task ledger and current active task.
+
+- Read only: `true`
+- Destructive: `false`
+- Idempotent: `true`
+
+## `token_shrinker_task_update`
+
+Create or update the project-local task ledger without sending data outside the workspace.
+
+- Read only: `false`
+- Destructive: `false`
+- Idempotent: `false`
+
 ## `token_shrinker_build_context`
 
 Build a provenance-rich native repository context bundle.

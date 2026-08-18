@@ -116,6 +116,38 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             READ_ONLY,
         ),
         tool(
+            "token_shrinker_task_status",
+            "Task status",
+            "Read the project-local task ledger and current active task.",
+            object(json!({"root":{"type":"string"}}), &["root"]),
+            envelope.clone(),
+            READ_ONLY,
+        ),
+        tool(
+            "token_shrinker_task_update",
+            "Task update",
+            "Create or update the project-local task ledger without sending data outside the workspace.",
+            object(
+                json!({
+                    "root":{"type":"string"},
+                    "action":{"enum":["ensure","add","start","complete","block"]},
+                    "id":{"type":"string"},
+                    "title":{"type":"string"},
+                    "description":{"type":"string"},
+                    "notes":{"type":"string"},
+                    "agent":{"type":"string"}
+                }),
+                &["root", "action"],
+            ),
+            envelope.clone(),
+            ToolAnnotations {
+                read_only_hint: false,
+                destructive_hint: false,
+                idempotent_hint: false,
+                open_world_hint: false,
+            },
+        ),
+        tool(
             "token_shrinker_build_context",
             "Build context",
             "Build a provenance-rich native repository context bundle.",
@@ -327,6 +359,8 @@ impl PublicHandler {
                 RouterConfig::default(),
             ))
             .map_err(ServiceError::Json)?,
+            "token_shrinker_task_status" => task_status(&request.params)?,
+            "token_shrinker_task_update" => task_update(&request.params)?,
             "token_shrinker_build_context" => self.build_context(request)?,
             "token_shrinker_fetch_source" => fetch_source(&request.params)?,
             "token_shrinker_search_memory" => self.search_memory(&request.params)?,
@@ -501,6 +535,181 @@ struct FetchParams {
     root: PathBuf,
     source_id: String,
 }
+
+const TASK_SCHEMA_VERSION: u16 = 1;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TaskLedger {
+    schema_version: u16,
+    updated_at_unix_ms: i64,
+    tasks: Vec<TaskRecord>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct TaskRecord {
+    id: String,
+    title: String,
+    description: Option<String>,
+    status: String,
+    notes: Option<String>,
+    agent: Option<String>,
+    created_at_unix_ms: i64,
+    updated_at_unix_ms: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct TaskStatusParams {
+    root: PathBuf,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct TaskUpdateParams {
+    root: PathBuf,
+    action: String,
+    id: Option<String>,
+    title: Option<String>,
+    description: Option<String>,
+    notes: Option<String>,
+    agent: Option<String>,
+}
+
+fn task_path(root: &Path) -> PathBuf {
+    root.join(".token-shrinker").join("tasks.json")
+}
+
+fn empty_task_ledger() -> TaskLedger {
+    TaskLedger {
+        schema_version: TASK_SCHEMA_VERSION,
+        updated_at_unix_ms: 0,
+        tasks: Vec::new(),
+    }
+}
+
+fn read_task_ledger(path: &Path) -> Result<(TaskLedger, bool), ServiceError> {
+    match fs::read_to_string(path) {
+        Ok(content) => {
+            let ledger = serde_json::from_str::<TaskLedger>(&content)
+                .map_err(|_| ServiceError::Internal("task-ledger-invalid"))?;
+            if ledger.schema_version > TASK_SCHEMA_VERSION {
+                return Err(ServiceError::Internal("task-ledger-newer-schema"));
+            }
+            Ok((ledger, true))
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok((empty_task_ledger(), false)),
+        Err(_) => Err(ServiceError::Internal("task-ledger-read")),
+    }
+}
+
+fn write_task_ledger(path: &Path, ledger: &TaskLedger) -> Result<(), ServiceError> {
+    if !path.parent().is_some_and(Path::exists) {
+        fs::create_dir_all(
+            path.parent()
+                .ok_or(ServiceError::Internal("task-ledger-path"))?,
+        )
+        .map_err(|_| ServiceError::Internal("task-ledger-directory"))?;
+    }
+    let content = serde_json::to_vec_pretty(ledger).map_err(ServiceError::Json)?;
+    let temporary = path.with_extension("json.tmp");
+    fs::write(&temporary, content).map_err(|_| ServiceError::Internal("task-ledger-write"))?;
+    if path.exists() {
+        fs::remove_file(path).map_err(|_| ServiceError::Internal("task-ledger-replace"))?;
+    }
+    fs::rename(temporary, path).map_err(|_| ServiceError::Internal("task-ledger-rename"))
+}
+
+fn task_status(value: &Value) -> Result<Value, ServiceError> {
+    let params: TaskStatusParams = deserialize(value)?;
+    let path = task_path(&params.root);
+    let (ledger, exists) = read_task_ledger(&path)?;
+    let active = ledger
+        .tasks
+        .iter()
+        .find(|task| task.status == "in_progress");
+    Ok(json!({
+        "exists": exists,
+        "path": path,
+        "schemaVersion": ledger.schema_version,
+        "updatedAtUnixMs": ledger.updated_at_unix_ms,
+        "activeTask": active,
+        "tasks": ledger.tasks
+    }))
+}
+
+fn task_update(value: &Value) -> Result<Value, ServiceError> {
+    let params: TaskUpdateParams = deserialize(value)?;
+    let path = task_path(&params.root);
+    let (mut ledger, existed) = read_task_ledger(&path)?;
+    let now = unix_millis()?;
+    let action = params.action.as_str();
+    let task = match action {
+        "ensure" => None,
+        "add" => {
+            let title = params
+                .title
+                .filter(|title| !title.trim().is_empty())
+                .ok_or(ServiceError::Internal("task-title-required"))?;
+            let id = params
+                .id
+                .filter(|id| !id.trim().is_empty())
+                .unwrap_or_else(|| format!("task-{now}"));
+            if ledger.tasks.iter().any(|task| task.id == id) {
+                return Err(ServiceError::Internal("task-id-exists"));
+            }
+            ledger.tasks.push(TaskRecord {
+                id: id.clone(),
+                title,
+                description: params.description,
+                status: "todo".to_owned(),
+                notes: params.notes,
+                agent: params.agent,
+                created_at_unix_ms: now,
+                updated_at_unix_ms: now,
+            });
+            ledger.tasks.last().cloned()
+        }
+        "start" | "complete" | "block" => {
+            let id = params
+                .id
+                .filter(|id| !id.trim().is_empty())
+                .ok_or(ServiceError::Internal("task-id-required"))?;
+            let status = match action {
+                "start" => "in_progress",
+                "complete" => "done",
+                _ => "blocked",
+            };
+            let task = ledger
+                .tasks
+                .iter_mut()
+                .find(|task| task.id == id)
+                .ok_or(ServiceError::Internal("task-not-found"))?;
+            status.clone_into(&mut task.status);
+            if params.notes.is_some() {
+                task.notes = params.notes;
+            }
+            if params.agent.is_some() {
+                task.agent = params.agent;
+            }
+            task.updated_at_unix_ms = now;
+            Some(task.clone())
+        }
+        _ => return Err(ServiceError::Internal("task-action")),
+    };
+    ledger.updated_at_unix_ms = now;
+    write_task_ledger(&path, &ledger)?;
+    Ok(json!({
+        "created": !existed,
+        "path": path,
+        "schemaVersion": ledger.schema_version,
+        "updatedAtUnixMs": ledger.updated_at_unix_ms,
+        "task": task,
+        "tasks": ledger.tasks
+    }))
+}
+
 fn fetch_source(value: &Value) -> Result<Value, ServiceError> {
     let params: FetchParams = deserialize(value)?;
     let source_id = token_shrinker_context::SourceId::new(params.source_id)
@@ -867,9 +1076,9 @@ mod tests {
     #[test]
     fn tools_are_stable_annotated_and_invokable() {
         let tools = tool_definitions();
-        assert_eq!(tools.len(), 9);
+        assert_eq!(tools.len(), 11);
         assert_eq!(tools[0].name, "token_shrinker_capabilities");
-        assert_eq!(tools[8].name, "token_shrinker_format_final");
+        assert_eq!(tools[10].name, "token_shrinker_format_final");
         assert!(
             tools
                 .iter()
@@ -883,6 +1092,8 @@ mod tests {
                     | "token_shrinker_fetch_source"
                     | "token_shrinker_execute"
                     | "token_shrinker_remember"
+                    | "token_shrinker_task_status"
+                    | "token_shrinker_task_update"
             ) {
                 continue;
             }
@@ -921,7 +1132,7 @@ mod tests {
         .expect("response");
         assert_eq!(
             listed["result"]["tools"].as_array().expect("tools").len(),
-            9
+            11
         );
         let called = handle_mcp_message(&handler, r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"token_shrinker_capabilities","arguments":{}}}"#).expect("response");
         assert_eq!(called["result"]["isError"], false);
@@ -933,6 +1144,73 @@ mod tests {
             )
             .is_none()
         );
+    }
+
+    #[test]
+    fn task_ledger_is_created_and_tracks_lifecycle() {
+        let directory = tempfile::tempdir().expect("temp");
+        let handler = PublicHandler::new().expect("handler");
+        let root = directory.path().to_string_lossy().to_string();
+        let ensured = handler
+            .handle(
+                &request(
+                    "token_shrinker_task_update",
+                    json!({"root":root,"action":"ensure"}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("ensure");
+        assert_eq!(ensured["data"]["created"], true);
+        let added = handler
+            .handle(
+                &request(
+                    "token_shrinker_task_update",
+                    json!({"root":directory.path(),"action":"add","id":"task-1","title":"Ship v0.2.0"}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("add");
+        assert_eq!(added["data"]["task"]["status"], "todo");
+        handler
+            .handle(
+                &request(
+                    "token_shrinker_task_update",
+                    json!({"root":directory.path(),"action":"start","id":"task-1","agent":"codex"}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("start");
+        let status = handler
+            .handle(
+                &request(
+                    "token_shrinker_task_status",
+                    json!({"root":directory.path()}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("status");
+        assert_eq!(status["data"]["activeTask"]["id"], "task-1");
+        handler
+            .handle(
+                &request(
+                    "token_shrinker_task_update",
+                    json!({"root":directory.path(),"action":"complete","id":"task-1"}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("complete");
+        let ledger = directory.path().join(".token-shrinker").join("tasks.json");
+        assert!(ledger.is_file());
+        let final_status = handler
+            .handle(
+                &request(
+                    "token_shrinker_task_status",
+                    json!({"root":directory.path()}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("final status");
+        assert_eq!(final_status["data"]["tasks"][0]["status"], "done");
     }
 
     #[test]
