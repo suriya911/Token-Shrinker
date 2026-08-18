@@ -16,7 +16,7 @@ test("stdio transport initializes and invokes structured tools", async () => {
   try {
     const result = await transport.call("token_shrinker_capabilities", {});
     assert.equal(result.protocolVersion, "1.0");
-    assert.equal(result.data.tools.length, 11);
+    assert.equal(result.data.tools.length, 12);
   } finally {
     await transport.close();
   }
@@ -91,7 +91,7 @@ test("daemon transport integrates with the native service", async () => {
     assert.equal(ready, true, "native daemon did not become ready");
     const transport = new DaemonTransport({ discoveryPath });
     const capabilities = await transport.call("token_shrinker_capabilities", {});
-    assert.equal(capabilities.data.tools.length, 11);
+    assert.equal(capabilities.data.tools.length, 12);
     const discovery = JSON.parse(await (await import("node:fs/promises")).readFile(discoveryPath, "utf8"));
     const stopTransport = new DaemonTransport({ discoveryPath });
     await stopTransport.call("daemon.shutdown", {});

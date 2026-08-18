@@ -217,6 +217,29 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             READ_ONLY,
         ),
         tool(
+            "token_shrinker_record_tokens",
+            "Record token measurement",
+            "Record an exact or estimated token measurement supplied by a compatible tokenizer.",
+            object(
+                json!({
+                    "rawTokens":{"type":"integer","minimum":0},
+                    "optimizedTokens":{"type":"integer","minimum":0},
+                    "tokenizer":{"type":"string"},
+                    "precision":{"enum":["exact","estimated"]},
+                    "requestId":{"type":"string"},
+                    "stage":{"type":"string"}
+                }),
+                &["rawTokens", "optimizedTokens", "tokenizer", "precision"],
+            ),
+            envelope.clone(),
+            ToolAnnotations {
+                read_only_hint: false,
+                destructive_hint: false,
+                idempotent_hint: false,
+                open_world_hint: false,
+            },
+        ),
+        tool(
             "token_shrinker_format_final",
             "Format final",
             "Resolve the selected final-response profile without changing machine-readable payloads.",
@@ -331,6 +354,7 @@ impl PublicHandler {
                 Some(("memory", "sqlite", "local-database"))
             }
             "token_shrinker_execute" => Some(("execution", "native-process", "local-process")),
+            "token_shrinker_record_tokens" => Some(("telemetry", "sqlite", "local-database")),
             "token_shrinker_format_final" => Some(("output", "caveman-policy", "in-process")),
             "token_shrinker_route" => Some(("routing", "deterministic-router", "in-process")),
             _ => None,
@@ -367,6 +391,7 @@ impl PublicHandler {
             "token_shrinker_remember" => self.remember(&request.params)?,
             "token_shrinker_execute" => execute(&request.params, cancelled)?,
             "token_shrinker_stats" => self.stats()?,
+            "token_shrinker_record_tokens" => self.record_tokens(&request.params)?,
             "token_shrinker_format_final" => self.format_final(&request.params)?,
             "health" => {
                 serde_json::to_value(self.registry.overall_health()).map_err(ServiceError::Json)?
@@ -456,6 +481,50 @@ impl PublicHandler {
             })
             .collect::<Vec<_>>();
         Ok(json!({"savings": savings, "contentTelemetry": false}))
+    }
+
+    fn record_tokens(&self, value: &Value) -> Result<Value, ServiceError> {
+        let params: RecordTokensParams = deserialize(value)?;
+        let exact = match params.precision.as_str() {
+            "exact" => true,
+            "estimated" => false,
+            _ => return Err(ServiceError::Internal("token-precision")),
+        };
+        let request_id = params
+            .request_id
+            .unwrap_or_else(|| format!("token-{}", unix_millis().unwrap_or_default()));
+        let request_id =
+            RequestId::new(request_id).map_err(|_| ServiceError::Internal("token-request-id"))?;
+        let now = unix_millis()?;
+        self.telemetry
+            .record_request(&RequestEvent {
+                request_id: request_id.clone(),
+                session_id: "token-measurement".to_owned(),
+                agent: "measurement-provider".to_owned(),
+                mode: RouteMode::Fast,
+                started_at_ms: now,
+                duration_ms: 0,
+                status: EventStatus::Success,
+            })
+            .and_then(|()| {
+                self.telemetry.record_tokens(&TokenEvent {
+                    request_id: request_id.clone(),
+                    stage: params.stage.unwrap_or_else(|| "external".to_owned()),
+                    direction: TokenDirection::Input,
+                    raw_tokens: params.raw_tokens,
+                    optimized_tokens: params.optimized_tokens,
+                    tokenizer: params.tokenizer,
+                    exact,
+                    created_at_ms: now,
+                })
+            })
+            .map_err(|_| ServiceError::Internal("telemetry-write"))?;
+        Ok(json!({
+            "requestId": request_id,
+            "rawTokens": params.raw_tokens,
+            "optimizedTokens": params.optimized_tokens,
+            "precision": if exact { "exact" } else { "estimated" }
+        }))
     }
 
     fn search_memory(&self, value: &Value) -> Result<Value, ServiceError> {
@@ -575,6 +644,17 @@ struct TaskUpdateParams {
     description: Option<String>,
     notes: Option<String>,
     agent: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct RecordTokensParams {
+    raw_tokens: u64,
+    optimized_tokens: u64,
+    tokenizer: String,
+    precision: String,
+    request_id: Option<String>,
+    stage: Option<String>,
 }
 
 fn task_path(root: &Path) -> PathBuf {
@@ -1076,9 +1156,9 @@ mod tests {
     #[test]
     fn tools_are_stable_annotated_and_invokable() {
         let tools = tool_definitions();
-        assert_eq!(tools.len(), 11);
+        assert_eq!(tools.len(), 12);
         assert_eq!(tools[0].name, "token_shrinker_capabilities");
-        assert_eq!(tools[10].name, "token_shrinker_format_final");
+        assert_eq!(tools[11].name, "token_shrinker_format_final");
         assert!(
             tools
                 .iter()
@@ -1094,6 +1174,7 @@ mod tests {
                     | "token_shrinker_remember"
                     | "token_shrinker_task_status"
                     | "token_shrinker_task_update"
+                    | "token_shrinker_record_tokens"
             ) {
                 continue;
             }
@@ -1132,7 +1213,7 @@ mod tests {
         .expect("response");
         assert_eq!(
             listed["result"]["tools"].as_array().expect("tools").len(),
-            11
+            12
         );
         let called = handle_mcp_message(&handler, r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"token_shrinker_capabilities","arguments":{}}}"#).expect("response");
         assert_eq!(called["result"]["isError"], false);
@@ -1259,6 +1340,37 @@ mod tests {
         assert_eq!(stats["data"]["contentTelemetry"], false);
         assert_eq!(stats["data"]["savings"][0]["eventCount"], 1);
         assert!(stats["data"]["savings"][0]["rawTokens"].as_u64().is_some());
+
+        let recorded = handler
+            .handle(
+                &request(
+                    "token_shrinker_record_tokens",
+                    json!({
+                        "rawTokens": 100,
+                        "optimizedTokens": 40,
+                        "tokenizer": "provider_exact_v1",
+                        "precision": "exact",
+                        "stage": "final"
+                    }),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("record tokens");
+        assert_eq!(recorded["data"]["precision"], "exact");
+        let stats = handler
+            .handle(
+                &request("token_shrinker_stats", json!({})),
+                &AtomicBool::new(false),
+            )
+            .expect("stats after exact record");
+        let exact = stats["data"]["savings"]
+            .as_array()
+            .expect("savings")
+            .iter()
+            .find(|row| row["tokenizer"] == "provider_exact_v1")
+            .expect("exact row");
+        assert_eq!(exact["exact"], true);
+        assert_eq!(exact["savingsTokens"], 60);
     }
 
     #[test]

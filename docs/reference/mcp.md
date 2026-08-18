@@ -82,6 +82,14 @@ Return local content-free token savings aggregates.
 - Destructive: `false`
 - Idempotent: `true`
 
+## `token_shrinker_record_tokens`
+
+Record an exact or estimated token measurement supplied by a compatible tokenizer.
+
+- Read only: `false`
+- Destructive: `false`
+- Idempotent: `false`
+
 ## `token_shrinker_format_final`
 
 Resolve the selected final-response profile without changing machine-readable payloads.

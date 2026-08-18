@@ -915,7 +915,7 @@ mod tests {
             &run(vec!["reference".to_owned(), "--json".to_owned()]).expect("reference"),
         )
         .expect("JSON");
-        assert_eq!(reference["tools"].as_array().expect("tools").len(), 11);
+        assert_eq!(reference["tools"].as_array().expect("tools").len(), 12);
     }
 
     #[test]

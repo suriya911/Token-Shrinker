@@ -13,6 +13,7 @@ export type ToolName =
   | "token_shrinker_remember"
   | "token_shrinker_execute"
   | "token_shrinker_stats"
+  | "token_shrinker_record_tokens"
   | "token_shrinker_format_final";
 export type RouteMode = "FAST" | "BUILD" | "DEEP";
 export type OutputMode = "lite" | "full" | "ultra" | "wenyan-lite" | "wenyan-full" | "wenyan-ultra" | "off";
