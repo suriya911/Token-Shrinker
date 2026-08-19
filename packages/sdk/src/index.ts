@@ -173,7 +173,7 @@ export class StdioTransport implements TokenShrinkerTransport {
     const transport = new StdioTransport(options.binaryPath ??
       process.env.TOKEN_SHRINKER_BINARY ?? "token-shrinker");
     await transport.#request("initialize", { protocolVersion: MCP_PROTOCOL_VERSION,
-      capabilities: {}, clientInfo: { name: "@token-shrinker/sdk", version: "0.1.3" } });
+      capabilities: {}, clientInfo: { name: "@token-shrinker/sdk", version: "0.2.0" } });
     transport.#notify("notifications/initialized", {}); return transport;
   }
   public async call<T extends object>(method: string, params: object,

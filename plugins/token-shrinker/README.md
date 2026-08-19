@@ -20,4 +20,4 @@ Call token_shrinker_capabilities. Do not inspect files. Report the binary versio
 package version, protocol version, health, and all five providers.
 ```
 
-The first MCP launch uses `npx` to obtain the pinned public package `@token-shrinker/cli@0.1.3` from npm. npm caches the package for later launches. Token-Shrinker does not redirect model-provider endpoints; repository context, memory, and execution remain local.
+The first MCP launch uses `npx` to obtain the pinned public package `@token-shrinker/cli@0.2.0` from npm. npm caches the package for later launches. Token-Shrinker does not redirect model-provider endpoints; repository context, memory, and execution remain local.

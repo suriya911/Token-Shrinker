@@ -1,6 +1,6 @@
 {
   "name": "@token-shrinker/cli-darwin-arm64",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Token-Shrinker native CLI binary for macOS Apple Silicon.",
   "license": "Apache-2.0",
   "repository": "https://github.com/suriya911/Token-Shrinker.git",
