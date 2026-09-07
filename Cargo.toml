@@ -13,7 +13,7 @@ criterion = { version = "=0.8.2", default-features = false }
 base64 = "=0.23.1"
 ed25519-dalek = "=3.0.0"
 ignore = "=0.4.33"
-interprocess = "=2.4.3"
+interprocess = "=2.4.4"
 fs4 = "=1.1.0"
 getrandom = "=0.4.3"
 r2d2 = "=0.8.10"
