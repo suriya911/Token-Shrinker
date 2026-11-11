@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "token-shrinker": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "--yes",
+        "@token-shrinker/cli@0.2.0",
+        "start",
+        "--stdio"
+      ],
+      "env": {}
+    }
+  }
+}

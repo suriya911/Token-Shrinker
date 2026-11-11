@@ -656,6 +656,28 @@ mod tests {
     use super::*;
     use std::fs;
 
+    /// Resolves a Python interpreter for the fake-provider fixture.
+    ///
+    /// Debian and Ubuntu have shipped only `python3` since 2020, so hard-coding `python` makes
+    /// these contract tests fail inside a stock Linux container. Worse, the provider reports the
+    /// missing interpreter as a generic `Unavailable`, which points at the compressor instead of
+    /// naming the real prerequisite.
+    fn python_interpreter() -> PathBuf {
+        for candidate in ["python3", "python", "py"] {
+            let launched = std::process::Command::new(candidate)
+                .arg("--version")
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status();
+            if launched.is_ok_and(|status| status.success()) {
+                return PathBuf::from(candidate);
+            }
+        }
+        panic!(
+            "provider contract tests need a Python interpreter on PATH; tried python3, python, py"
+        );
+    }
+
     fn fake_spec(mode: &str) -> ProviderSpec {
         let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests")
@@ -663,7 +685,7 @@ mod tests {
             .join("fake_provider.py");
         ProviderSpec {
             id: "fake".to_owned(),
-            command: PathBuf::from("python"),
+            command: python_interpreter(),
             base_args: vec![script.to_string_lossy().into_owned(), mode.to_owned()],
             environment: BTreeMap::new(),
             version_requirement: VersionReq::parse(">=1.0.0, <2.0.0").expect("requirement"),

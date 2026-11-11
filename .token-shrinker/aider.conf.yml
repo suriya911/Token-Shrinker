@@ -1,0 +1,3 @@
+# token-shrinker-owned:v1
+read:
+  - .token-shrinker/aider-context.md

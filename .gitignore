@@ -8,6 +8,15 @@
 **/dist/
 *.tsbuildinfo
 
+# Local agent state and package-manager caches
+/.pnpm-store/
+/.serena/
+/.token-shrinker/tasks.json
+/.claude/settings.local.json
+/.codex/config.toml.bak
+/.gemini/settings.json
+/opencode.json
+
 # Logs and local environment
 *.log
 !fixtures/demo-repo/logs/noisy-test-output.log

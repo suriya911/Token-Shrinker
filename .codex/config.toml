@@ -1,0 +1,10 @@
+# >>> token-shrinker: owned adapter fragment >>>
+[mcp_servers.token-shrinker]
+command = "npx"
+args = ["--yes", "@token-shrinker/cli@0.2.0", "start", "--stdio"]
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+
+[mcp_servers.token-shrinker.tools.token_shrinker_execute]
+approval_mode = "approve"
+# <<< token-shrinker: owned adapter fragment <<<

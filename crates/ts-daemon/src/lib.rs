@@ -634,9 +634,16 @@ fn server_loop(
     shutdown_timeout: Duration,
 ) {
     let workers = Arc::new(Mutex::new(Vec::<thread::JoinHandle<()>>::new()));
+    // Accept is non-blocking so the loop can observe `shutting_down` without needing a wakeup
+    // connection. A fixed poll interval then charges every caller up to that interval in pure
+    // latency before its connection is accepted. Backing off instead keeps a busy daemon
+    // responding within tens of microseconds while an idle one still parks at the long interval
+    // and burns no CPU.
+    let mut idle_polls = 0_u32;
     while !graph.shutting_down.load(Ordering::Acquire) {
         match listener.accept() {
             Ok(stream) => {
+                idle_polls = 0;
                 let graph = Arc::clone(&graph);
                 let auth = discovery.auth_token.clone();
                 let worker =
@@ -646,7 +653,8 @@ fn server_loop(
                 }
             }
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                thread::sleep(Duration::from_millis(5));
+                idle_polls = idle_polls.saturating_add(1);
+                thread::sleep(accept_backoff(idle_polls));
             }
             Err(_) => break,
         }
@@ -668,6 +676,20 @@ fn server_loop(
                 thread::sleep(Duration::from_millis(2));
             }
         }
+    }
+}
+
+/// Sleep between accept polls, growing with the number of consecutive idle polls.
+///
+/// The first tier covers the common case of a caller connecting while the daemon is already
+/// serving traffic, so a request is picked up almost immediately. The later tiers keep an idle
+/// daemon cheap: after roughly a second of silence it settles at the long interval.
+const fn accept_backoff(idle_polls: u32) -> Duration {
+    match idle_polls {
+        0..=40 => Duration::from_micros(50),
+        41..=240 => Duration::from_micros(500),
+        241..=440 => Duration::from_millis(2),
+        _ => Duration::from_millis(5),
     }
 }
 

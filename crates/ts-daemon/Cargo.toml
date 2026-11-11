@@ -29,7 +29,12 @@ token-shrinker-update.workspace = true
 widestring.workspace = true
 
 [dev-dependencies]
+criterion.workspace = true
 tempfile.workspace = true
+
+[[bench]]
+name = "daemon"
+harness = false
 
 [lints]
 workspace = true

@@ -27,6 +27,12 @@ importers:
         specifier: workspace:*
         version: link:../adapter-core
 
+  packages/adapter-cursor:
+    dependencies:
+      '@token-shrinker/adapter-core':
+        specifier: workspace:*
+        version: link:../adapter-core
+
   packages/adapter-codex:
     dependencies:
       '@token-shrinker/adapter-core':
@@ -51,6 +57,12 @@ importers:
         specifier: workspace:*
         version: link:../adapter-core
 
+  packages/adapter-warp:
+    dependencies:
+      '@token-shrinker/adapter-core':
+        specifier: workspace:*
+        version: link:../adapter-core
+
   packages/cli:
     devDependencies:
       '@token-shrinker/adapter-aider':
@@ -65,12 +77,18 @@ importers:
       '@token-shrinker/adapter-core':
         specifier: workspace:*
         version: link:../adapter-core
+      '@token-shrinker/adapter-cursor':
+        specifier: workspace:*
+        version: link:../adapter-cursor
       '@token-shrinker/adapter-gemini':
         specifier: workspace:*
         version: link:../adapter-gemini
       '@token-shrinker/adapter-opencode':
         specifier: workspace:*
         version: link:../adapter-opencode
+      '@token-shrinker/adapter-warp':
+        specifier: workspace:*
+        version: link:../adapter-warp
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

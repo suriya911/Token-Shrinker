@@ -509,14 +509,21 @@ impl TerminalCompressor {
 
     fn push_chunk(&mut self, partial: &mut Vec<u8>, chunk: &[u8]) {
         partial.extend_from_slice(chunk);
-        while let Some(newline) = partial.iter().position(|byte| *byte == b'\n') {
-            let mut line = partial.drain(..=newline).collect::<Vec<_>>();
-            line.pop();
+        // Scan with a cursor and compact once at the end. Draining the buffer per line instead
+        // shifts every remaining byte left on each iteration, which is quadratic in the size of
+        // the chunk; a single large push of a build log is exactly that worst case.
+        let mut consumed = 0;
+        while let Some(offset) = partial[consumed..].iter().position(|byte| *byte == b'\n') {
+            let end = consumed + offset;
+            let mut line = &partial[consumed..end];
             if line.last() == Some(&b'\r') {
-                line.pop();
+                line = &line[..line.len() - 1];
             }
-            self.record_line(String::from_utf8_lossy(&line).into_owned());
+            let line = String::from_utf8_lossy(line).into_owned();
+            self.record_line(line);
+            consumed = end + 1;
         }
+        partial.drain(..consumed);
     }
 
     fn record_line(&mut self, line: String) {
@@ -778,6 +785,28 @@ mod tests {
         ContentHash, RelevanceSignals, Sensitivity, SourceKind, SourceLocation,
     };
 
+    /// Resolves a Python interpreter for the fake-provider fixture.
+    ///
+    /// Debian and Ubuntu have shipped only `python3` since 2020, so hard-coding `python` makes
+    /// these contract tests fail inside a stock Linux container. Worse, the provider reports the
+    /// missing interpreter as a generic `Unavailable`, which points at the compressor instead of
+    /// naming the real prerequisite.
+    fn python_interpreter() -> PathBuf {
+        for candidate in ["python3", "python", "py"] {
+            let launched = std::process::Command::new(candidate)
+                .arg("--version")
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status();
+            if launched.is_ok_and(|status| status.success()) {
+                return PathBuf::from(candidate);
+            }
+        }
+        panic!(
+            "provider contract tests need a Python interpreter on PATH; tried python3, python, py"
+        );
+    }
+
     fn fake_script() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("..")
@@ -788,7 +817,7 @@ mod tests {
     #[test]
     fn headroom_contract_validates_compression_schema() {
         let provider = HeadroomProvider::with_limits(
-            PathBuf::from("python"),
+            python_interpreter(),
             vec![
                 fake_script().to_string_lossy().into_owned(),
                 "mcp-headroom".to_owned(),
@@ -809,7 +838,7 @@ mod tests {
     fn rtk_contract_accepts_bounded_utf8_terminal_output() {
         let provider = RtkProvider::from_spec(ProviderSpec {
             id: "rtk".to_owned(),
-            command: PathBuf::from("python"),
+            command: python_interpreter(),
             base_args: vec![
                 fake_script().to_string_lossy().into_owned(),
                 "echo".to_owned(),

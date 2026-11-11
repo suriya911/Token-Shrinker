@@ -6,11 +6,13 @@ import process from "node:process";
 const manifests = [
   "package.json",
   "packages/adapter-aider/package.json",
+  "packages/adapter-cursor/package.json",
   "packages/adapter-claude-code/package.json",
   "packages/adapter-codex/package.json",
   "packages/adapter-core/package.json",
   "packages/adapter-gemini/package.json",
   "packages/adapter-opencode/package.json",
+  "packages/adapter-warp/package.json",
   "packages/cli/package.json",
   "packages/sdk/package.json",
   "packages/vscode/package.json",

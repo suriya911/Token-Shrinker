@@ -1,0 +1,740 @@
+{
+  "fixtureVersion": 1,
+  "note": "Frozen MCP wire contract for protocol v1. Regenerate only with a deliberate, documented protocol change; see docs/reference/protocol-v1-compatibility.md.",
+  "initialize": {
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "instructions": "Use capabilities first; execution requires explicit user approval.",
+    "protocolVersion": "2025-06-18",
+    "serverInfo": {
+      "description": "Local context optimization service",
+      "name": "token-shrinker",
+      "title": "Token-Shrinker",
+      "version": "<server-version>"
+    }
+  },
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Build a provenance-rich native repository context bundle.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "root",
+          "goal",
+          "budget"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_build_context",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Build context"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "List versions, limits, providers, and degradation reasons.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "token_shrinker_capabilities",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Capabilities"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Run an explicitly approved argument-array command under bounded policy.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "args": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "environment": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "program": {
+            "type": "string"
+          },
+          "timeoutMs": {
+            "maximum": 300000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "workingDirectory": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "program",
+          "workingDirectory"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_execute",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Execute"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Fetch a previously cited repository source by addressable handle.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "root": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "root",
+          "sourceId"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_fetch_source",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Fetch source"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Resolve the selected final-response profile without changing machine-readable payloads.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "lite",
+              "full",
+              "ultra",
+              "wenyan-lite",
+              "wenyan-full",
+              "wenyan-ultra",
+              "off"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_format_final",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Format final"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Record an exact or estimated token measurement supplied by a compatible tokenizer.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "optimizedTokens": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "precision": {
+            "enum": [
+              "exact",
+              "estimated"
+            ]
+          },
+          "rawTokens": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "tokenizer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "rawTokens",
+          "optimizedTokens",
+          "tokenizer",
+          "precision"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_record_tokens",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Record token measurement"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Store an explicitly supplied local memory record.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "expiresAtUnixMs": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_remember",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Remember"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Select and explain FAST, BUILD, or DEEP using deterministic rules.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "budgetOverride": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "explicitMode": {
+            "enum": [
+              "FAST",
+              "BUILD",
+              "DEEP"
+            ]
+          },
+          "operations": {
+            "items": {
+              "enum": [
+                "lookup",
+                "command",
+                "edit",
+                "debug",
+                "architecture",
+                "investigation"
+              ]
+            },
+            "type": "array"
+          },
+          "scope": {
+            "enum": [
+              "named",
+              "multi_file",
+              "repository"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "token_shrinker_route",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Route"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Search isolated local memory without external transport.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "query": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_search_memory",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Search memory"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Return local content-free token savings aggregates.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "token_shrinker_stats",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Stats"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Read the project-local task ledger and current active task.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "root": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "root"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_task_status",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Task status"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Create or update the project-local task ledger without sending data outside the workspace.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "ensure",
+              "add",
+              "start",
+              "complete",
+              "block"
+            ]
+          },
+          "agent": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "root",
+          "action"
+        ],
+        "type": "object"
+      },
+      "name": "token_shrinker_task_update",
+      "outputSchema": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "protocolVersion": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "protocolVersion",
+          "requestId",
+          "warnings",
+          "data"
+        ],
+        "type": "object"
+      },
+      "title": "Task update"
+    }
+  ]
+}

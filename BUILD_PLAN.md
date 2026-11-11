@@ -1170,7 +1170,7 @@ Run these scenarios in CI:
 ### Functional
 
 - `init`, `doctor`, `start`, `stats`, and `add` meet their CLI contracts.
-- All nine MCP tools validate against published schemas.
+- Every advertised MCP tool validates against published schemas, and the frozen v1 wire contract in `fixtures/mcp/wire-v1.json` still matches the running server.
 - `FAST`, `BUILD`, and `DEEP` decisions are deterministic and explainable.
 - Context bundles obey budgets and contain fetchable provenance.
 - SQLite memory works with retention, scoping, inspection, and deletion.

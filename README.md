@@ -234,7 +234,7 @@ Managed transactional updates, rollback, background schedulers, and unattended a
 Install the public release:
 
 ```bash
-npm install --global @token-shrinker/cli@0.1.1
+npm install --global @token-shrinker/cli@0.2.0
 token-shrinker init
 token-shrinker doctor
 ```
@@ -270,6 +270,21 @@ codex plugin add token-shrinker@token-shrinker-plugins
 Start a new Codex task after installation. The plugin bundles the workflow skill and launches the
 exact public CLI version through npm without changing Codex's model endpoint or credentials.
 
+### Cursor and Warp
+
+Register Token-Shrinker in the project-scoped MCP configuration and install an always-applied
+project rule in one command:
+
+```bash
+token-shrinker add cursor
+token-shrinker add warp
+```
+
+Cursor uses `.cursor/mcp.json` and `.cursor/rules/token-shrinker.mdc`. Warp uses
+`.warp/.mcp.json` and `.warp/rules/token-shrinker.md`. These rules make context routing automatic
+for repository work while preserving each client's approval controls. Review generated files
+before approving a project-scoped MCP server.
+
 ### Cargo
 
 The Rust crates are currently source-workspace components, not a promised crates.io install surface. Use npm for prebuilt releases or build from source. Public crate publishing may be added only after crate ownership and the full dependency graph are release-ready.
@@ -299,6 +314,8 @@ token-shrinker start
 
 # Add an adapter or optional provider.
 token-shrinker add codex
+token-shrinker add cursor
+token-shrinker add warp
 token-shrinker add graphify
 
 # Show local savings by session, agent, mode, or date.
@@ -374,25 +391,32 @@ The MCP server advertises tools according to detected capabilities:
 | `token_shrinker_build_context` | read-only | rank and pack context with provenance and omissions |
 | `token_shrinker_fetch_source` | read-only | retrieve a cited source or omitted range on demand |
 | `token_shrinker_search_memory` | read-only | query the configured memory provider |
-| `token_shrinker_remember` | writes local/provider memory | store an explicitly supplied memory record |
-| `token_shrinker_execute` | executes a process | run an approved command and compress its output |
 | `token_shrinker_stats` | read-only | return local token and latency aggregates |
 | `token_shrinker_format_final` | read-only | apply selected Caveman profile to final user-facing text only |
+| `token_shrinker_task_status` | read-only | read the project-local task ledger and current active task |
+| `token_shrinker_remember` | writes local/provider memory | store an explicitly supplied memory record |
+| `token_shrinker_task_update` | writes the project-local task ledger | create or update a task without sending data outside the workspace |
+| `token_shrinker_record_tokens` | writes local telemetry | record an exact or estimated measurement from a compatible tokenizer |
+| `token_shrinker_execute` | executes a process | run an approved command and compress its output |
+
+The advertised surface is frozen for protocol v1 in [`fixtures/mcp/wire-v1.json`](./fixtures/mcp/wire-v1.json) and enforced by `pnpm check:mcp-wire`, which fails when a tool, an input schema, or a response envelope changes.
 
 Every result includes `protocolVersion`, `requestId`, and structured warnings. Context results also include source citations, hashes, estimated token counts, budget decisions, and whether an exact tokenizer was used.
 
 ## Supported adapters
 
-| Adapter | Target integration | Planned status |
+| Adapter | Target integration | Status |
 |---|---|---|
-| MCP stdio | any MCP-capable agent | first stable interface |
-| Claude Code | generated MCP/skill configuration | M5 complete |
-| Codex CLI | generated MCP/skill configuration | M5 complete |
-| Gemini CLI | generated MCP configuration/instructions | M5 complete |
-| OpenCode | MCP/Agent Skill configuration | M5 complete |
-| Aider | explicit config/read-only context export | M5 experimental |
-| VS Code | commands, status, diagnostics, stats | milestone 6 |
-| JavaScript SDK | Node.js clients and future adapters | milestone 4 |
+| MCP stdio | any MCP-capable agent | shipped, first stable interface |
+| Claude Code | generated MCP/skill configuration | shipped |
+| Codex CLI | generated MCP/skill configuration | shipped |
+| Gemini CLI | generated MCP configuration/instructions | shipped |
+| OpenCode | MCP/Agent Skill configuration | shipped |
+| Cursor | project MCP and always-applied project rule | shipped |
+| Warp | project MCP and project rule | shipped |
+| Aider | explicit config/read-only context export | shipped, experimental |
+| VS Code | commands, status, diagnostics, stats | shipped |
+| JavaScript SDK | Node.js clients and future adapters | shipped |
 
 Adapter support means the integration is tested against documented public extension points. Token-Shrinker does not patch or impersonate an agent.
 

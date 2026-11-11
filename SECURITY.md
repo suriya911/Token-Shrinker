@@ -2,10 +2,14 @@
 
 ## Supported versions
 
-Token-Shrinker is pre-alpha and has no supported release yet. Until the first release, security fixes are made only on the default development branch.
+Token-Shrinker publishes `0.x` releases to npm, the Claude Code and Codex plugin marketplaces, and the Visual Studio Marketplace. The `0.x` series is pre-1.0: it is supported on a best-effort basis, and compatibility may change between minor versions until protocol v1 is frozen for the `1.0.0` release.
+
+Security fixes land on the default branch first and ship in the next release. Only the latest published version receives fixes; there is no backport branch before `1.0.0`.
 
 | Version | Supported |
 |---|---|
+| Latest published `0.x` release | Yes, best effort |
+| Earlier `0.x` releases | No, upgrade to the latest |
 | Default branch | Yes, best effort |
 | Unreleased local snapshots | No guarantee |
 

@@ -22,6 +22,8 @@ import { claudeCodeAdapter } from "@token-shrinker/adapter-claude-code";
 import { codexAdapter } from "@token-shrinker/adapter-codex";
 import { geminiAdapter } from "@token-shrinker/adapter-gemini";
 import { openCodeAdapter } from "@token-shrinker/adapter-opencode";
+import { cursorAdapter } from "@token-shrinker/adapter-cursor";
+import { warpAdapter } from "@token-shrinker/adapter-warp";
 
 const require = createRequire(import.meta.url);
 const PLATFORM_PACKAGES: Readonly<Record<string, string>> = {
@@ -38,6 +40,8 @@ const ADAPTERS: Readonly<Record<string, AdapterDefinition>> = {
   codex: codexAdapter,
   gemini: geminiAdapter,
   opencode: openCodeAdapter,
+  cursor: cursorAdapter,
+  warp: warpAdapter,
 };
 
 export interface AdapterCommandOptions {
@@ -103,7 +107,7 @@ export async function adapterCommand(args: readonly string[], options: AdapterCo
   const definition = requested ? ADAPTERS[requested] : undefined;
   if (!definition) {
     throw new Error("Unknown agent adapter. Supported adapters: " +
-      ["aider", "claude-code", "codex", "gemini", "opencode"].join(", "));
+      ["aider", "claude-code", "codex", "cursor", "gemini", "opencode", "warp"].join(", "));
   }
   const action = verb === "add" ? "install" : "uninstall";
   const root = option(args, "--root") ?? options.cwd ?? process.cwd();

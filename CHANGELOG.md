@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- Cursor and Warp project adapters with local MCP registration and automatic repository rules.
+- Adapter-specific rule content for clients that support always-loaded project rules.
+
 ## [0.2.0] - 2026-08-18
 
 ### Added

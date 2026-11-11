@@ -1144,6 +1144,28 @@ fn display_path(path: &Path) -> String {
 mod tests {
     use super::*;
 
+    /// Resolves a Python interpreter for the fake-provider fixture.
+    ///
+    /// Debian and Ubuntu have shipped only `python3` since 2020, so hard-coding `python` makes
+    /// these contract tests fail inside a stock Linux container. Worse, the provider reports the
+    /// missing interpreter as a generic `Unavailable`, which points at the compressor instead of
+    /// naming the real prerequisite.
+    fn python_interpreter() -> PathBuf {
+        for candidate in ["python3", "python", "py"] {
+            let launched = std::process::Command::new(candidate)
+                .arg("--version")
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status();
+            if launched.is_ok_and(|status| status.success()) {
+                return PathBuf::from(candidate);
+            }
+        }
+        panic!(
+            "provider contract tests need a Python interpreter on PATH; tried python3, python, py"
+        );
+    }
+
     #[test]
     fn graphify_contract_normalizes_private_graph_context() {
         let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -1153,7 +1175,7 @@ mod tests {
         let provider = GraphifyProvider::from_spec(
             ProviderSpec {
                 id: "graphify".to_owned(),
-                command: PathBuf::from("python"),
+                command: python_interpreter(),
                 base_args: vec![script.to_string_lossy().into_owned(), "graphify".to_owned()],
                 environment: BTreeMap::new(),
                 version_requirement: VersionReq::STAR,

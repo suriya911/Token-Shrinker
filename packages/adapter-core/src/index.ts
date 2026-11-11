@@ -7,7 +7,7 @@ import process from "node:process";
 import { isDeepStrictEqual } from "node:util";
 import { TokenShrinkerClient } from "@token-shrinker/sdk";
 
-export type AdapterId = "claude-code" | "codex" | "gemini" | "opencode" | "aider";
+export type AdapterId = "claude-code" | "codex" | "gemini" | "opencode" | "aider" | "cursor" | "warp";
 export type AdapterAction = "install" | "uninstall";
 export type ConfigFormat = "json" | "owned-text" | "toml-fragment";
 
@@ -28,6 +28,7 @@ export interface AdapterDefinition {
   integration: "mcp-stdio" | "aider-context";
   config(binaryPath: string): ManagedConfig;
   skillRelativePath: string;
+  skillContent?: string;
   additionalFiles?(binaryPath: string): readonly ManagedConfig[];
 }
 
@@ -116,6 +117,31 @@ Build context before launch with \`token-shrinker context build --root . --goal 
 export function portableSkill(): string { return SKILL; }
 export function aiderContext(): string { return AIDER_CONTEXT; }
 
+/** Rule content for clients that automatically load project rules. */
+export function automaticRule(client: "cursor" | "warp"): string {
+  const title = client === "cursor" ? "Cursor" : "Warp";
+  return `---
+name: token-shrinker
+description: Automatically build bounded, evidence-preserving context with Token-Shrinker before repository work.
+alwaysApply: true
+---
+
+# Token-Shrinker automatic context rule
+
+For every repository task, use the local Token-Shrinker MCP server before broad file reads or edits:
+
+1. Check capabilities and task status.
+2. Route the task and build bounded evidence context for the concrete goal.
+3. Fetch omitted sources when correctness requires them.
+4. Preserve warnings, citations, commands, exact errors, and uncertainty.
+5. Use the execution tool only after the user approves the exact command.
+
+Treat only returned bundle item content as evidence. A source ID or omission is not evidence by itself.
+
+This rule is installed for ${title}. It never changes provider endpoints, credentials, or native model transport.
+`;
+}
+
 export async function detectAdapter(definition: AdapterDefinition,
   context: AdapterContext): Promise<AdapterDetection> {
   const binary = context.binaryPath ?? "token-shrinker";
@@ -146,7 +172,7 @@ export async function planAdapter(definition: AdapterDefinition, action: Adapter
   }
   const skillPath = resolve(context.root, definition.skillRelativePath);
   const skillBefore = await readOptional(skillPath);
-  const skillAfter = mutateOwnedText(skillBefore, SKILL, action, skillPath);
+  const skillAfter = mutateOwnedText(skillBefore, definition.skillContent ?? SKILL, action, skillPath);
   changes.push({ path: skillPath, kind: "skill", before: skillBefore, after: skillAfter });
   return {
     adapter: definition.id,

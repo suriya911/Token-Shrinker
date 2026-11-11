@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { listZipEntries, readZipEntry } from "./lib/zip.mjs";
 
 const fail = (message) => {
   throw new Error(`M7 verification failed: ${message}`);
@@ -36,11 +36,25 @@ if (report.requiredEvidenceRecallBasisPoints < 9500) fail("evidence recall is be
 if (report.citationCorrectnessBasisPoints !== 10000) fail("citations are not 100% correct");
 if (report.providers.optionalProviders !== false) fail("optional provider must be disabled");
 
+// Published evidence must describe the version we are shipping. Without this, a stale report
+// keeps satisfying the thresholds above long after the binary it measured stopped existing.
+const workspaceVersion = readFileSync("Cargo.toml", "utf8")
+  .match(/^\s*version\s*=\s*"([^"]+)"/m)?.[1];
+if (!workspaceVersion) fail("could not read the workspace version from Cargo.toml");
+const evidenceVersion = report.environment?.binaryVersion;
+if (evidenceVersion !== workspaceVersion) {
+  fail(`public demo evidence reports binaryVersion ${evidenceVersion ?? "<missing>"} but the `
+    + `workspace is ${workspaceVersion}; regenerate benchmarks/public-demo.json`);
+}
+const renderedDemo = readFileSync("benchmarks/public-demo.md", "utf8");
+if (!renderedDemo.includes(workspaceVersion)) {
+  fail(`benchmarks/public-demo.md does not name version ${workspaceVersion}`);
+}
+
 const vsix = join("packages", "vscode", "dist", "token-shrinker.vsix");
 if (!existsSync(vsix)) fail("VSIX was not created");
-const archiveCommand = process.platform === "win32" ? "tar" : "unzip";
-const listArgs = process.platform === "win32" ? ["-tf", vsix] : ["-Z1", vsix];
-const listing = execFileSync(archiveCommand, listArgs, { encoding: "utf8" }).replaceAll("\\", "/");
+const archive = readFileSync(vsix);
+const listing = listZipEntries(archive).join("\n");
 for (const entry of ["extension.vsixmanifest", "extension/package.json", "extension/dist/index.js"]) {
   if (!listing.includes(entry)) fail(`VSIX lacks ${entry}`);
 }
@@ -48,15 +62,7 @@ for (const forbidden of ["extension/src/", "extension/test/", "extension/node_mo
   if (listing.includes(forbidden)) fail(`VSIX contains ${forbidden}`);
 }
 
-const manifest = JSON.parse(
-  execFileSync(
-    archiveCommand,
-    process.platform === "win32"
-      ? ["-xOf", vsix, "extension/package.json"]
-      : ["-p", vsix, "extension/package.json"],
-    { encoding: "utf8" },
-  ),
-);
+const manifest = JSON.parse(readZipEntry(archive, "extension/package.json").toString("utf8"));
 if (manifest.capabilities?.untrustedWorkspaces?.supported !== "limited") {
   fail("VSIX does not declare limited untrusted-workspace support");
 }

@@ -28,10 +28,12 @@
     "check:native": "node scripts/verify-native-package.mjs",
     "check:release": "node scripts/verify-release-metadata.mjs",
     "package:native": "node scripts/package-native.mjs",
+    "check:scripts": "node --test \"scripts/test/*.test.mjs\"",
     "check:secrets": "node scripts/scan-secrets.mjs",
     "check:licenses": "node scripts/check-node-licenses.mjs",
-    "check:demo": "cargo run -q -p token-shrinker-cli -- benchmark demo --json",
+    "check:demo": "node scripts/run-demo.mjs",
     "check:m7": "pnpm --filter ./packages/vscode package && node scripts/verify-m7.mjs",
-    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm check:reference && pnpm check:protocol && pnpm check:secrets && pnpm check:licenses && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:adapters && pnpm check:claude-plugin && pnpm check:codex-plugin && pnpm check:native && pnpm check:demo && pnpm check:m7 && pnpm check:release"
+    "check": "pnpm check:rust && pnpm check:fixture && pnpm check:contracts && pnpm check:reference && pnpm check:protocol && pnpm check:mcp-wire && pnpm check:scripts && pnpm check:secrets && pnpm check:licenses && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm check:adapters && pnpm check:claude-plugin && pnpm check:codex-plugin && pnpm check:native && pnpm check:demo && pnpm check:m7 && pnpm check:release",
+    "check:mcp-wire": "node scripts/generate-mcp-wire.mjs --check"
   }
 }

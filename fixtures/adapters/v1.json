@@ -37,6 +37,18 @@
       "state": "owned-sidecar",
       "malformed": "user-owned: true\n",
       "nativeTransport": "unchanged-provider"
+    },
+    "cursor": {
+      "config": ".cursor/mcp.json",
+      "state": "existing-user-config",
+      "malformed": "{ nope",
+      "nativeTransport": "unchanged-provider"
+    },
+    "warp": {
+      "config": ".warp/.mcp.json",
+      "state": "existing-user-config",
+      "malformed": "{ nope",
+      "nativeTransport": "unchanged-provider"
     }
   }
 }

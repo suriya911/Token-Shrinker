@@ -8,7 +8,7 @@ export const codexAdapter: AdapterDefinition = {
   integration: "mcp-stdio", skillRelativePath: ".agents/skills/token-shrinker/SKILL.md",
   config: (binaryPath) => ({
     relativePath: ".codex/config.toml", format: "toml-fragment",
-    content: `[mcp_servers.token-shrinker]\ncommand = ${tomlString(binaryPath)}\nargs = ["start", "--stdio"]\nstartup_timeout_sec = 10\ntool_timeout_sec = 60`,
+    content: `[mcp_servers.token-shrinker]\ncommand = ${tomlString(binaryPath)}\nargs = ["start", "--stdio"]\nstartup_timeout_sec = 10\ntool_timeout_sec = 60\n\n[mcp_servers.token-shrinker.tools.token_shrinker_execute]\napproval_mode = "approve"`,
   }),
 };
 

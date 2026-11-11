@@ -4,6 +4,7 @@ import { access, chmod, copyFile, mkdtemp, mkdir, readFile, rm, writeFile } from
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
+import { listTarEntries } from "./lib/tar.mjs";
 
 const targets = {
   "darwin-arm64": ["@token-shrinker/cli-darwin-arm64", "token-shrinker"],
@@ -56,9 +57,7 @@ try {
   const packed = npmRun(["pack", "--json", "--pack-destination", output], staging);
   assert.equal(packed.status, 0, packed.stderr);
   const tarball = join(output, JSON.parse(packed.stdout)[0].filename);
-  const listed = spawnSync("tar", ["-tzf", tarball], { encoding: "utf8" });
-  assert.equal(listed.status, 0, listed.stderr);
-  const files = listed.stdout.trim().split(/\r?\n/).sort();
+  const files = listTarEntries(await readFile(tarball)).sort();
   assert.deepEqual(files, ["package/LICENSE", "package/bin/" + executableName,
     "package/package.json"].sort());
   assert((await readFile(tarball)).byteLength > 0);
@@ -79,9 +78,7 @@ try {
   const umbrellaPacked = npmRun(["pack", "--json", "--pack-destination", output], umbrella);
   assert.equal(umbrellaPacked.status, 0, umbrellaPacked.stderr);
   const umbrellaTarball = join(output, JSON.parse(umbrellaPacked.stdout)[0].filename);
-  const umbrellaList = spawnSync("tar", ["-tzf", umbrellaTarball], { encoding: "utf8" });
-  assert.equal(umbrellaList.status, 0, umbrellaList.stderr);
-  assert.deepEqual(umbrellaList.stdout.trim().split(/\r?\n/).sort(), [
+  assert.deepEqual(listTarEntries(await readFile(umbrellaTarball)).sort(), [
     "package/README.md", "package/dist/index.d.ts", "package/dist/index.d.ts.map",
     "package/dist/index.js", "package/dist/index.js.map", "package/dist/LICENSE",
     "package/package.json",

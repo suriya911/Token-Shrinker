@@ -45,8 +45,10 @@
     "@token-shrinker/adapter-claude-code": "workspace:*",
     "@token-shrinker/adapter-codex": "workspace:*",
     "@token-shrinker/adapter-core": "workspace:*",
+    "@token-shrinker/adapter-cursor": "workspace:*",
     "@token-shrinker/adapter-gemini": "workspace:*",
     "@token-shrinker/adapter-opencode": "workspace:*",
+    "@token-shrinker/adapter-warp": "workspace:*",
     "esbuild": "0.28.2"
   }
 }
