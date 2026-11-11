@@ -4,3 +4,5 @@ allowBuilds:
   '@vscode/vsce-sign': false
   esbuild: true
   keytar: false
+overrides:
+  brace-expansion: 5.0.12
