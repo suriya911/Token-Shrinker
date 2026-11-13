@@ -1038,7 +1038,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "ed25519-dalek",
  "semver",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-compress"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "semver",
@@ -1076,14 +1076,14 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-config"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "token-shrinker-types",
 ]
 
 [[package]]
 name = "token-shrinker-context"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "serde",
@@ -1094,7 +1094,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-daemon"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "fs4",
@@ -1120,7 +1120,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-exec"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "tempfile",
  "token-shrinker-compress",
@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-mcp"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1149,7 +1149,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-memory"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "r2d2",
@@ -1167,7 +1167,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-output"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1176,7 +1176,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-protocol"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1185,7 +1185,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-provider"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "semver",
@@ -1194,7 +1194,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-repo"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "ignore",
  "semver",
@@ -1208,7 +1208,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-router"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "criterion",
  "serde",
@@ -1218,7 +1218,7 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-telemetry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "r2d2",
  "r2d2_sqlite",
@@ -1229,14 +1229,14 @@ dependencies = [
 
 [[package]]
 name = "token-shrinker-types"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "token-shrinker-update"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "ed25519-dalek",

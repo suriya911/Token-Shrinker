@@ -3,7 +3,7 @@
 This guide covers moving between published Token-Shrinker versions. Each section lists
 required actions, observable behavior changes, and anything that is safe to ignore.
 
-Released versions to date are `0.1.0`, `0.1.1`, `0.1.2`, `0.1.3`, and `0.2.0`. All are pre-`1.0` alpha releases.
+Released versions to date are `0.1.0`, `0.1.1`, `0.1.2`, `0.1.3`, and `0.2.0`. `0.2.1` is the current release candidate. All are pre-`1.0` alpha releases.
 Until `1.0.0` ships, the compatibility guarantees in [Compatibility policy](#compatibility-policy)
 describe intent rather than a frozen contract.
 
@@ -15,7 +15,7 @@ telemetry schemas remain readable. Estimated measurements stay separate from exa
 measurements by tokenizer identity. Update the CLI and refresh agent plugins before use.
 
 ```bash
-npm install --global @token-shrinker/cli@0.2.0
+npm install --global @token-shrinker/cli@0.2.1
 ```
 
 After upgrading, verify `token_shrinker_capabilities`, `token_shrinker_task_status`, and
