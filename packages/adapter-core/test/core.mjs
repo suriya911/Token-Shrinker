@@ -13,7 +13,8 @@ test("portable skill preserves evidence and scopes concise formatting", () => {
   for (const required of ["warnings", "citations", "commands", "uncertainty",
     "only for the final human response", "user approves", "native model transport",
     "A source ID or omission is not evidence", "Never infer implementation details",
-    "token_shrinker_record_tokens", "precision: \"exact\""]) {
+    "token_shrinker_record_tokens", "precision: \"exact\"", "user turns 5, 10, 15",
+    "healthy optional provider", "Caveman `full` default"]) {
     assert(skill.includes(required), required);
   }
   assert(aiderContext().includes("read-only context"));

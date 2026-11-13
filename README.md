@@ -299,6 +299,13 @@ approval/connection controls in place. Aider's user configuration remains launch
 ChatGPT web-wide conversations cannot be modified by a local CLI; that requires an official
 connector from the client.
 
+After setup, the generated workflow skill/rule automatically selects healthy optional providers:
+Headroom refreshes context on turns 5, 10, 15, and so on; Graphify refreshes after tracked project
+changes; RTK handles terminal output; Claude-Mem is searched at task/session start; and Caveman
+`full` formats human-facing responses. Each provider is capability-detected and falls back to the
+built-in implementation when unavailable. A client must expose the conversation turn to its agent
+for exact 5-turn scheduling; a local CLI cannot observe private ChatGPT web conversations.
+
 ### Cargo
 
 The Rust crates are currently source-workspace components, not a promised crates.io install surface. Use npm for prebuilt releases or build from source. Public crate publishing may be added only after crate ownership and the full dependency graph are release-ready.

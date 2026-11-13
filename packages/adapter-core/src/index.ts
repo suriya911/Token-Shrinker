@@ -97,27 +97,29 @@ name: token-shrinker
 description: Use Token-Shrinker to route work, build bounded evidence context, fetch omitted sources, inspect warnings, and request approved execution.
 license: Apache-2.0
 ---
-<!-- token-shrinker-owned:v1 -->
+<!-- token-shrinker-owned:v2 -->
 
 # Token-Shrinker workflow
 
-1. Call \`token_shrinker_capabilities\` before relying on optional providers or execution.
-2. Call \`token_shrinker_task_status\` with the workspace root at the start of every task/session. If no ledger exists, call \`token_shrinker_task_update\` with \`action: "ensure"\`, then add the task.
+1. Call \`token_shrinker_capabilities\` at session start and automatically use every healthy optional provider it reports; do not wait for the user to name Graphify, Headroom, RTK, or Claude-Mem. Use the built-in fallback when a provider is unavailable.
+2. Call \`token_shrinker_task_status\` with the workspace root at the start of every task/session. Search memory for the task and repository scope automatically; use Claude-Mem when healthy and SQLite fallback otherwise.
 3. Start the active task with \`token_shrinker_task_update\` (\`action: "start"\`) before implementation; mark it \`complete\` or \`block\` before the final response.
 4. Call \`token_shrinker_route\` when the appropriate FAST, BUILD, or DEEP route is unclear.
-5. Call \`token_shrinker_build_context\` with the repository root, concrete goal, and explicit token budget.
+5. Call \`token_shrinker_build_context\` with the repository root, concrete goal, and explicit token budget before broad reads. Refresh it automatically on user turns 5, 10, 15, and so on; if Headroom is healthy, let it compress the refreshed context.
+6. When a project feature, dependency, integration, or tracked source changes, refresh Graphify context before continuing; reuse the same project root across chats and branches.
+7. Route terminal output through \`token_shrinker_execute\`; use RTK automatically when healthy and the built-in terminal compressor otherwise. Never ask the user to select the compressor.
 6. Treat only returned bundle item content as evidence. A source ID or omission is not evidence by itself.
 7. If an omitted source may be required for correctness, call \`token_shrinker_fetch_source\` with its exact source ID before answering. If retrieval fails or the content still does not establish the claim, say the claim is unverified.
 8. Cite only content actually returned by \`token_shrinker_build_context\` or \`token_shrinker_fetch_source\`. Never infer implementation details from filenames, source IDs, package metadata, or prior knowledge.
 9. Inspect every warning and preserve relevant warnings, citations, commands, exact errors, and uncertainty.
 10. When the model/provider reports usage from a compatible tokenizer, call \`token_shrinker_record_tokens\` with raw and optimized counts, tokenizer ID, and \`precision: "exact"\`; otherwise preserve \`estimated\` measurements.
 11. Call \`token_shrinker_execute\` only after the user approves the exact command and policy permits it.
-12. Use \`token_shrinker_format_final\` only for the final human response. Never apply concise formatting to tool calls, JSON, code, commands, logs, citations, or intermediate evidence.
+12. Use \`token_shrinker_format_final\` for every human-facing response with the configured Caveman \`full\` default; concise formatting is only for the final human response. Never apply it to tool calls, JSON, code, commands, logs, citations, or intermediate evidence.
 
 If Token-Shrinker is unavailable, say that the \`token-shrinker\` executable is missing and ask the user to install it or run \`token-shrinker doctor\`. Never redirect provider endpoints, credentials, or native model transport.
 `;
 
-const AIDER_CONTEXT = `<!-- token-shrinker-owned:v1 -->
+const AIDER_CONTEXT = `<!-- token-shrinker-owned:v2 -->
 # Token-Shrinker with Aider
 
 Build context before launch with \`token-shrinker context build --root . --goal "<goal>" --budget 16000 --json\` and provide the selected evidence as read-only context. Preserve warnings, citations, commands, exact errors, and uncertainty. Concise formatting applies only to the final human response. Never change provider endpoints or credentials.
@@ -139,11 +141,14 @@ alwaysApply: true
 
 For every repository task, use the local Token-Shrinker MCP server before broad file reads or edits:
 
-1. Check capabilities and task status.
-2. Route the task and build bounded evidence context for the concrete goal.
-3. Fetch omitted sources when correctness requires them.
-4. Preserve warnings, citations, commands, exact errors, and uncertainty.
-5. Use the execution tool only after the user approves the exact command.
+1. Check capabilities and task status; automatically use healthy Graphify, Headroom, RTK, and Claude-Mem, with safe built-in fallbacks.
+2. Search memory at every task/session start and build bounded context before broad reads.
+3. Refresh context on user turns 5, 10, 15, and so on; refresh Graphify when tracked project files, dependencies, features, or integrations change.
+4. Use RTK automatically for terminal output when healthy; never ask the user to choose a compressor.
+5. Fetch omitted sources when correctness requires them.
+6. Preserve warnings, citations, commands, exact errors, and uncertainty.
+7. Format every human-facing response through the default Caveman \`full\` profile.
+8. Use the execution tool only after the user approves the exact command.
 
 Treat only returned bundle item content as evidence. A source ID or omission is not evidence by itself.
 
