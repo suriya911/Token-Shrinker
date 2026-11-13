@@ -10,6 +10,13 @@ export const codexAdapter: AdapterDefinition = {
     relativePath: ".codex/config.toml", format: "toml-fragment",
     content: `[mcp_servers.token-shrinker]\ncommand = ${tomlString(binaryPath)}\nargs = ["start", "--stdio"]\nstartup_timeout_sec = 10\ntool_timeout_sec = 60\n\n[mcp_servers.token-shrinker.tools.token_shrinker_execute]\napproval_mode = "approve"`,
   }),
+  user: {
+    skillRelativePath: ".agents/skills/token-shrinker/SKILL.md",
+    config: (binaryPath) => ({
+      relativePath: ".codex/config.toml", format: "toml-fragment",
+      content: `[mcp_servers.token-shrinker]\ncommand = ${tomlString(binaryPath)}\nargs = ["start", "--stdio"]\nstartup_timeout_sec = 10\ntool_timeout_sec = 60\n\n[mcp_servers.token-shrinker.tools.token_shrinker_execute]\napproval_mode = "approve"`,
+    }),
+  },
 };
 
 export default codexAdapter;

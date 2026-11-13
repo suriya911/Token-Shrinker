@@ -11,6 +11,14 @@ export const geminiAdapter: AdapterDefinition = {
     jsonPath: ["mcpServers", "token-shrinker"],
     jsonValue: { command: binaryPath, args: ["start", "--stdio"], timeout: 60_000, trust: false },
   }),
+  user: {
+    skillRelativePath: ".gemini/skills/token-shrinker/SKILL.md",
+    config: (binaryPath) => ({
+      relativePath: ".gemini/settings.json", format: "json",
+      jsonPath: ["mcpServers", "token-shrinker"],
+      jsonValue: { command: binaryPath, args: ["start", "--stdio"], timeout: 60_000, trust: false },
+    }),
+  },
 };
 
 export default geminiAdapter;

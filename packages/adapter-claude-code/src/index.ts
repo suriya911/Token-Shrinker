@@ -14,6 +14,14 @@ export const claudeCodeAdapter: AdapterDefinition = {
     jsonPath: ["mcpServers", "token-shrinker"],
     jsonValue: { type: "stdio", command: binaryPath, args: ["start", "--stdio"], env: {} },
   }),
+  user: {
+    skillRelativePath: ".claude/skills/token-shrinker/SKILL.md",
+    config: (binaryPath) => ({
+      relativePath: ".claude.json", format: "json",
+      jsonPath: ["mcpServers", "token-shrinker"],
+      jsonValue: { type: "stdio", command: binaryPath, args: ["start", "--stdio"], env: {} },
+    }),
+  },
 };
 
 export default claudeCodeAdapter;

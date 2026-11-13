@@ -9,6 +9,7 @@ import { TokenShrinkerClient } from "@token-shrinker/sdk";
 
 export type AdapterId = "claude-code" | "codex" | "gemini" | "opencode" | "aider" | "cursor" | "warp";
 export type AdapterAction = "install" | "uninstall";
+export type AdapterScope = "project" | "user";
 export type ConfigFormat = "json" | "owned-text" | "toml-fragment";
 
 export interface ManagedConfig {
@@ -30,10 +31,17 @@ export interface AdapterDefinition {
   skillRelativePath: string;
   skillContent?: string;
   additionalFiles?(binaryPath: string): readonly ManagedConfig[];
+  user?: {
+    config(binaryPath: string): ManagedConfig;
+    skillRelativePath: string;
+    skillContent?: string;
+    additionalFiles?(binaryPath: string): readonly ManagedConfig[];
+  };
 }
 
 export interface AdapterContext {
   root: string;
+  scope?: AdapterScope;
   binaryPath?: string;
   pathValue?: string;
   platform?: NodeJS.Platform;
@@ -66,6 +74,7 @@ export interface PlannedFileChange {
 
 export interface AdapterPlan {
   adapter: AdapterId;
+  scope: AdapterScope;
   action: AdapterAction;
   changes: readonly PlannedFileChange[];
   nativeTransportUnchanged: true;
@@ -145,9 +154,10 @@ This rule is installed for ${title}. It never changes provider endpoints, creden
 export async function detectAdapter(definition: AdapterDefinition,
   context: AdapterContext): Promise<AdapterDetection> {
   const binary = context.binaryPath ?? "token-shrinker";
-  const config = definition.config(binary);
+  const surface = context.scope === "user" ? definition.user : undefined;
+  const config = surface?.config(binary) ?? definition.config(binary);
   const configPath = resolve(context.root, config.relativePath);
-  const skillPath = resolve(context.root, definition.skillRelativePath);
+  const skillPath = resolve(context.root, surface?.skillRelativePath ?? definition.skillRelativePath);
   const existing = await readOptional(configPath);
   return {
     adapter: definition.id,
@@ -162,7 +172,14 @@ export async function detectAdapter(definition: AdapterDefinition,
 export async function planAdapter(definition: AdapterDefinition, action: AdapterAction,
   context: AdapterContext): Promise<AdapterPlan> {
   const binary = context.binaryPath ?? "token-shrinker";
-  const managed = [definition.config(binary), ...(definition.additionalFiles?.(binary) ?? [])];
+  const scope = context.scope ?? "project";
+  const surface = scope === "user" ? definition.user : undefined;
+  if (scope === "user" && surface === undefined) {
+    throw new AdapterConfigError(`${definition.displayName} has no tested user-level configuration`,
+      "malformed-config");
+  }
+  const managed = [surface?.config(binary) ?? definition.config(binary),
+    ...(surface?.additionalFiles?.(binary) ?? definition.additionalFiles?.(binary) ?? [])];
   const changes: PlannedFileChange[] = [];
   for (const [index, config] of managed.entries()) {
     const path = resolve(context.root, config.relativePath);
@@ -170,12 +187,13 @@ export async function planAdapter(definition: AdapterDefinition, action: Adapter
     const after = mutateConfig(config, before, action);
     changes.push({ path, kind: index === 0 ? "config" : "support", before, after });
   }
-  const skillPath = resolve(context.root, definition.skillRelativePath);
+  const skillPath = resolve(context.root, surface?.skillRelativePath ?? definition.skillRelativePath);
   const skillBefore = await readOptional(skillPath);
-  const skillAfter = mutateOwnedText(skillBefore, definition.skillContent ?? SKILL, action, skillPath);
+  const skillAfter = mutateOwnedText(skillBefore, surface?.skillContent ?? definition.skillContent ?? SKILL,
+    action, skillPath);
   changes.push({ path: skillPath, kind: "skill", before: skillBefore, after: skillAfter });
   return {
-    adapter: definition.id,
+    adapter: definition.id, scope,
     action,
     changes,
     nativeTransportUnchanged: true,
@@ -201,7 +219,9 @@ export async function applyAdapterPlan(plan: AdapterPlan): Promise<void> {
 export async function validateAdapter(definition: AdapterDefinition,
   context: AdapterContext): Promise<{ capabilities: true; buildContext: true }> {
   if (definition.integration !== "mcp-stdio") {
-    const config = definition.config(context.binaryPath ?? "token-shrinker");
+    const config = context.scope === "user" && definition.user
+      ? definition.user.config(context.binaryPath ?? "token-shrinker")
+      : definition.config(context.binaryPath ?? "token-shrinker");
     const installed = await readOptional(resolve(context.root, config.relativePath));
     if (installed === null || !ownsConfig(config, installed)) {
       throw new AdapterConfigError("Aider context configuration is not installed", "ownership-conflict");

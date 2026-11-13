@@ -5,17 +5,20 @@ import { createHash } from "node:crypto";
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 import {
   applyAdapterPlan,
+  detectAdapter,
   inspectAdapterClientState,
   planAdapter,
   validateAdapter,
   type AdapterDefinition,
   type AdapterPlan,
   type ClientApprovalState,
+  type AdapterScope,
 } from "@token-shrinker/adapter-core";
 import { aiderAdapter } from "@token-shrinker/adapter-aider";
 import { claudeCodeAdapter } from "@token-shrinker/adapter-claude-code";
@@ -48,10 +51,12 @@ export interface AdapterCommandOptions {
   binaryPath?: string;
   cwd?: string;
   validate?: boolean;
+  scope?: AdapterScope;
 }
 
 export interface AdapterCommandResult {
   adapter: string;
+  scope: AdapterScope;
   action: "install" | "uninstall";
   applied: boolean;
   nativeTransportUnchanged: true;
@@ -110,14 +115,15 @@ export async function adapterCommand(args: readonly string[], options: AdapterCo
       ["aider", "claude-code", "codex", "cursor", "gemini", "opencode", "warp"].join(", "));
   }
   const action = verb === "add" ? "install" : "uninstall";
-  const root = option(args, "--root") ?? options.cwd ?? process.cwd();
+  const scope: AdapterScope = args.includes("--global") ? "user" : options.scope ?? "project";
+  const root = option(args, "--root") ?? options.cwd ?? (scope === "user" ? homedir() : process.cwd());
   const binaryPath = resolve(option(args, "--binary") ?? options.binaryPath ?? resolveBinary());
-  const context = { root, binaryPath };
+  const context = { root, binaryPath, scope };
   const plan = await planAdapter(definition, action, context);
   const changes = summarizeChanges(plan);
   const dryRun = args.includes("--dry-run");
   if (dryRun) return {
-    adapter: definition.id, action, applied: false, nativeTransportUnchanged: true,
+    adapter: definition.id, scope, action, applied: false, nativeTransportUnchanged: true,
     serverProtocolValidated: false, clientApproval: "unknown", clientConnection: "not-checked",
     clientStateDetail: "Dry run only; server protocol and agent-client state were not checked.", changes,
   };
@@ -135,10 +141,48 @@ export async function adapterCommand(args: readonly string[], options: AdapterCo
   }
   const clientState = await inspectAdapterClientState(definition, context);
   return {
-    adapter: definition.id, action, applied: true, nativeTransportUnchanged: true,
+    adapter: definition.id, scope, action, applied: true, nativeTransportUnchanged: true,
     serverProtocolValidated, clientApproval: clientState.approval,
     clientConnection: clientState.connection, clientStateDetail: clientState.detail, changes,
   };
+}
+
+/** Installs every tested user-scope adapter surface idempotently. */
+export async function globalSetup(options: AdapterCommandOptions = {}): Promise<{
+  scope: "user"; root: string; results: readonly AdapterCommandResult[]; unsupported: readonly string[];
+}> {
+  const root = options.cwd ?? homedir();
+  const results: AdapterCommandResult[] = [];
+  const unsupported: string[] = [];
+  const seen = new Set<string>();
+  for (const [name, definition] of Object.entries(ADAPTERS)) {
+    if (seen.has(definition.id)) continue;
+    seen.add(definition.id);
+    if (!definition.user) { unsupported.push(name); continue; }
+    const result = await adapterCommand(["add", name, "--global"], {
+      ...options, cwd: root, scope: "user", validate: false,
+    });
+    if (result) results.push(result);
+  }
+  return { scope: "user", root, results, unsupported };
+}
+
+/** Reports user-scope integration state without modifying files. */
+export async function globalStatus(options: AdapterCommandOptions = {}): Promise<{
+  scope: "user"; root: string; adapters: readonly unknown[]; unsupported: readonly string[];
+}> {
+  const root = options.cwd ?? homedir();
+  const adapters = [] as unknown[];
+  const unsupported: string[] = [];
+  const binaryPath = resolve(options.binaryPath ?? resolveBinary());
+  const seen = new Set<string>();
+  for (const [name, definition] of Object.entries(ADAPTERS)) {
+    if (seen.has(definition.id)) continue;
+    seen.add(definition.id);
+    if (!definition.user) { unsupported.push(name); continue; }
+    adapters.push(await detectAdapter(definition, { root, binaryPath, scope: "user" }));
+  }
+  return { scope: "user", root, adapters, unsupported };
 }
 
 export async function launch(args = process.argv.slice(2)): Promise<number> {
@@ -162,9 +206,18 @@ export async function launch(args = process.argv.slice(2)): Promise<number> {
 const invokedPath = process.argv[1];
 if (invokedPath && realpathSync(invokedPath) === realpathSync(fileURLToPath(import.meta.url))) {
   const args = process.argv.slice(2);
-  adapterCommand(args).then(async (result) => {
+  const command = args[0];
+  const special = command === "setup" && args[1] === "--global"
+    ? globalSetup()
+    : command === "status" && args[1] === "--global"
+      ? globalStatus()
+      : adapterCommand(args);
+  special.then(async (result) => {
     if (result) {
-      console.log(args.includes("--json") ? JSON.stringify(result) : renderAdapterResult(result));
+      const text = "adapter" in result && "action" in result
+        ? renderAdapterResult(result)
+        : JSON.stringify(result, null, 2);
+      console.log(args.includes("--json") ? JSON.stringify(result) : text);
       return 0;
     }
     return launch(args);

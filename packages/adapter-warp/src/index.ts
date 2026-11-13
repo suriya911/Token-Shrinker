@@ -12,6 +12,15 @@ export const warpAdapter: AdapterDefinition = {
     jsonPath: ["mcpServers", "token-shrinker"],
     jsonValue: { command: binaryPath, args: ["start", "--stdio"] },
   }),
+  user: {
+    skillRelativePath: ".warp/rules/token-shrinker.md",
+    skillContent: automaticRule("warp"),
+    config: (binaryPath) => ({
+      relativePath: ".warp/.mcp.json", format: "json",
+      jsonPath: ["mcpServers", "token-shrinker"],
+      jsonValue: { command: binaryPath, args: ["start", "--stdio"] },
+    }),
+  },
 };
 
 export default warpAdapter;

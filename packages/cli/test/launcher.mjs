@@ -4,8 +4,8 @@ import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { adapterCommand, platformPackage, resolveBinary, verifyBinaryChecksum } from
-  "../dist/index.js";
+import { adapterCommand, globalSetup, globalStatus, platformPackage, resolveBinary,
+  verifyBinaryChecksum } from "../dist/index.js";
 
 test("platform mapping is explicit and unsupported targets fail", () => {
   assert.equal(platformPackage("win32", "x64"), "@token-shrinker/cli-win32-x64");
@@ -52,6 +52,23 @@ test("agent adapters support preview, atomic apply, and owned removal", async ()
       { binaryPath, validate: false });
     assert.equal(removed?.applied, true);
     await assert.rejects(access(join(root, ".agents", "skills", "token-shrinker", "SKILL.md")));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("global setup installs every user adapter idempotently", async () => {
+  const root = await mkdtemp(join(tmpdir(), "token-shrinker-global-install-"));
+  try {
+    const setup = await globalSetup({ cwd: root, binaryPath: "token-shrinker", validate: false });
+    assert.equal(setup.scope, "user");
+    assert.equal(setup.results.length, 7);
+    assert.deepEqual(setup.unsupported, []);
+    const second = await globalSetup({ cwd: root, binaryPath: "token-shrinker", validate: false });
+    assert.equal(second.results.length, 7);
+    const status = await globalStatus({ cwd: root, binaryPath: "token-shrinker" });
+    assert.equal(status.adapters.length, 7);
+    assert.ok(status.adapters.every((adapter) => adapter.configured));
   } finally {
     await rm(root, { recursive: true, force: true });
   }

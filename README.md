@@ -285,6 +285,20 @@ Cursor uses `.cursor/mcp.json` and `.cursor/rules/token-shrinker.mdc`. Warp uses
 for repository work while preserving each client's approval controls. Review generated files
 before approving a project-scoped MCP server.
 
+### Global local-agent setup
+
+Install the tested user-level MCP, skill, and rule surfaces for every supported local adapter:
+
+```bash
+token-shrinker setup --global
+token-shrinker status --global
+```
+
+The setup is idempotent, preserves each client's native model transport, and leaves client
+approval/connection controls in place. Aider's user configuration remains launch/config based.
+ChatGPT web-wide conversations cannot be modified by a local CLI; that requires an official
+connector from the client.
+
 ### Cargo
 
 The Rust crates are currently source-workspace components, not a promised crates.io install surface. Use npm for prebuilt releases or build from source. Public crate publishing may be added only after crate ownership and the full dependency graph are release-ready.
@@ -367,6 +381,8 @@ console.log(result.metrics.estimatedTokensSaved);
 | `token-shrinker start [--stdio|--foreground]` | run the daemon or a dedicated MCP stdio server |
 | `token-shrinker stop` | stop the current user's daemon |
 | `token-shrinker status` | report daemon and protocol status |
+| `token-shrinker setup --global` | install tested user-level local-agent integrations idempotently |
+| `token-shrinker status --global` | report user-level integration files and unsupported adapters |
 | `token-shrinker stats [--since DURATION]` | display local token and latency metrics |
 | `token-shrinker output get|set` | inspect or override Caveman mode globally, per agent/tool, or per session |
 | `token-shrinker update --check` | verify signed compatibility metadata and report available updates without changing the system |

@@ -12,6 +12,14 @@ export const openCodeAdapter: AdapterDefinition = {
     jsonValue: { type: "local", command: [binaryPath, "start", "--stdio"],
       enabled: true },
   }),
+  user: {
+    skillRelativePath: ".config/opencode/skills/token-shrinker/SKILL.md",
+    config: (binaryPath) => ({
+      relativePath: ".config/opencode/opencode.json", format: "json",
+      jsonPath: ["mcp", "token-shrinker"],
+      jsonValue: { type: "local", command: [binaryPath, "start", "--stdio"], enabled: true },
+    }),
+  },
 };
 
 export default openCodeAdapter;

@@ -14,6 +14,17 @@ export const aiderAdapter: AdapterDefinition = {
     relativePath: ".token-shrinker/aider-context.md", format: "owned-text",
     content: aiderContext(),
   }],
+  user: {
+    skillRelativePath: ".config/token-shrinker/aider.md",
+    config: () => ({
+      relativePath: ".aider.conf.yml", format: "owned-text",
+      content: "# token-shrinker-owned:v1\nread:\n  - .config/token-shrinker/aider-context.md\n",
+    }),
+    additionalFiles: () => [{
+      relativePath: ".config/token-shrinker/aider-context.md", format: "owned-text",
+      content: aiderContext(),
+    }],
+  },
 };
 
 export function aiderLaunchArgs(root = "."): readonly string[] {
