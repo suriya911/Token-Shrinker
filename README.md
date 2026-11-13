@@ -234,7 +234,7 @@ Managed transactional updates, rollback, background schedulers, and unattended a
 Install the public release:
 
 ```bash
-npm install --global @token-shrinker/cli@0.2.1
+npm install --global @token-shrinker/cli@0.2.2
 token-shrinker init
 token-shrinker doctor
 ```
