@@ -51,7 +51,7 @@ fn query() -> String {
     format!("{TASK} session.test authorize auth-policy session.mjs boundary assertion caller")
 }
 
-fn baseline_tokens(root: &Path, estimator: &ConservativeEstimator) -> u64 {
+fn baseline_tokens(root: &Path, estimator: ConservativeEstimator) -> u64 {
     BASELINE
         .iter()
         .map(|relative| {
@@ -138,7 +138,7 @@ fn estimator_tokens(value: &impl serde::Serialize) -> u64 {
 fn end_to_end_benchmark(criterion: &mut Criterion) {
     let root = fixture_root();
     let estimator = ConservativeEstimator;
-    let baseline = baseline_tokens(&root, &estimator);
+    let baseline = baseline_tokens(&root, estimator);
     let optimized = optimized_bundle(&root);
     let baseline_total = baseline
         + estimator
@@ -163,14 +163,14 @@ fn end_to_end_benchmark(criterion: &mut Criterion) {
 
     let mut group = criterion.benchmark_group("end_to_end_task_bundle");
     group.bench_function("baseline_token_count", |bencher| {
-        bencher.iter(|| baseline_tokens(black_box(&root), black_box(&estimator)))
+        bencher.iter(|| baseline_tokens(black_box(&root), black_box(estimator)));
     });
     group.bench_function("optimized_route_context_compress", |bencher| {
         bencher.iter_batched(
             || root.clone(),
             |root| optimized_bundle(black_box(&root)),
             BatchSize::SmallInput,
-        )
+        );
     });
     group.finish();
 }
