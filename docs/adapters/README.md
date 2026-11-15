@@ -7,7 +7,7 @@ M5 adapters add Token-Shrinker through documented tool and instruction surfaces.
 | Claude Code | project MCP stdio + project skill | `.mcp.json` key and `.claude/skills/token-shrinker/SKILL.md` | Claude Code 2.1.224 and current [MCP](https://code.claude.com/docs/en/mcp)/[skills](https://code.claude.com/docs/en/skills) formats |
 | Codex | project MCP stdio + portable skill | marked block in `.codex/config.toml` and `.agents/skills/token-shrinker/SKILL.md` | Codex CLI 0.145.0 and current [MCP configuration](https://learn.chatgpt.com/docs/extend/mcp) |
 | Gemini CLI | project MCP stdio + workspace skill | `.gemini/settings.json` key and `.gemini/skills/token-shrinker/SKILL.md` | current [MCP](https://geminicli.com/docs/tools/mcp-server/) and [Agent Skills](https://geminicli.com/docs/cli/skills/) contracts |
-| OpenCode | local MCP stdio + Agent Skill | `opencode.json` key and `.opencode/skills/token-shrinker/SKILL.md` | OpenCode 1.18.x [MCP](https://opencode.ai/docs/mcp-servers/) and [skills](https://opencode.ai/docs/skills) contracts |
+| OpenCode | local MCP stdio + Agent Skill | `opencode.json` `mcp.servers.token-shrinker` entry and `.opencode/skills/token-shrinker/SKILL.md` | OpenCode [MCP](https://opencode.ai/docs/mcp-servers/) and [skills](https://opencode.ai/docs/skills) contracts |
 | Aider | explicit owned config + read-only context | `.token-shrinker/aider.conf.yml`, context, and portable skill | current [YAML config](https://aider.chat/docs/config/aider_conf.html) `--config`/`read` contract |
 | Cursor | project MCP + always-applied rule | `.cursor/mcp.json` and `.cursor/rules/token-shrinker.mdc` | current [MCP](https://docs.cursor.com/context/model-context-protocol) and project-rules contracts |
 | Warp | project MCP + project rule | `.warp/.mcp.json` and `.warp/rules/token-shrinker.md` | current [file-based MCP](https://docs.warp.dev/guides/external-tools/using-mcp-servers-with-warp) contract |
@@ -21,6 +21,7 @@ Each TypeScript adapter exposes a definition consumed by `detectAdapter`, `planA
 3. Installation writes only the named MCP key, a marked TOML fragment, or an owned sidecar.
 4. Server validation starts `token-shrinker start --stdio` directly and invokes both `token_shrinker_capabilities` and `token_shrinker_build_context`. This proves the generated command and Token-Shrinker protocol, not that the agent client approved or connected to the server.
 5. Adapter results report `serverProtocolValidated`, `clientApproval`, `clientConnection`, and a human-readable detail separately. Client approval is never granted or bypassed by the installer. Claude project rejection is detected from `.claude/settings.local.json` and reported with the reset-and-approve remediation.
+   OpenCode permissions are root-level user policy; the adapter installs only the MCP server entry and does not overwrite an existing `permissions` array. Users who want an explicit approval prompt for execution can add an OpenCode rule for `token-shrinker_token_shrinker_execute` with effect `ask`.
 6. Reinstall is byte-idempotent. Uninstall removes only values that still match Token-Shrinker's owned value; modified values fail safely.
 7. A failed multi-file apply restores earlier files to their prior bytes.
 
