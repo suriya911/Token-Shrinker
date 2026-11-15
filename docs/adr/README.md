@@ -28,5 +28,6 @@ Architecture decision records (ADRs) capture durable choices that constrain Toke
 | [0011](./0011-native-model-transport.md) | Preserve native agent-to-model transport | Accepted |
 | [0012](./0012-transactional-updater.md) | Read-only v1 update checks; transactional updates later | Accepted |
 | [0013](./0013-additive-extension-model.md) | Additive extensions with migration and rollback gates | Accepted |
+| [0014](./0014-protocol-v1-freeze.md) | Freeze Protocol v1 as an additive compatibility contract | Accepted |
 
 Use [0000-template.md](./0000-template.md) for new decisions.
