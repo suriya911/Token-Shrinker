@@ -29,7 +29,12 @@ token-shrinker-types.workspace = true
 token-shrinker-update.workspace = true
 
 [dev-dependencies]
+criterion.workspace = true
 tempfile.workspace = true
+
+[[bench]]
+name = "end_to_end"
+harness = false
 
 [lints]
 workspace = true
