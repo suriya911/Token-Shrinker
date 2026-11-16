@@ -12,8 +12,8 @@ importers:
   .:
     devDependencies:
       '@types/node':
-        specifier: 26.2.0
-        version: 26.2.0
+        specifier: 26.6.6
+        version: 26.6.6
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -125,11 +125,11 @@ importers:
         specifier: workspace:*
         version: link:../sdk
       '@types/vscode':
-        specifier: 1.134.0
-        version: 1.134.0
+        specifier: 1.146.0
+        version: 1.146.0
       '@vscode/vsce':
-        specifier: 4.1.0
-        version: 4.1.0(supports-color@7.2.0)
+        specifier: 4.1.1
+        version: 4.1.1(supports-color@7.2.0)
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -144,16 +144,16 @@ packages:
     resolution: {integrity: sha512-IUZydyTUkDnYdstOW9pFOOUQlBjAepK5teihDE3x6yxsPJs/hsAaaYpeGxdxrgtOiJbBKSjKW7MDk7AEhb4LRg==}
     engines: {node: '>=22.0.0'}
 
-  '@azure/core-client@1.11.0':
-    resolution: {integrity: sha512-JjQWO6akOck45PH/XBrxzsQGAiKrfFl4m5iggJ0ItMIz5omRufOXWpqCPpdjKN3vKDzlSUvFjaMb7Zwf0gvAdA==}
+  '@azure/core-client@1.11.2':
+    resolution: {integrity: sha512-ajuIU1aMoTs/ERYrKnIqQrV5Vz3RL8mwDC5RdedIXUvR7pi6cWzeYmt0LfNz6+W91CuCO4WJG0zA6+PhU1X+hw==}
     engines: {node: '>=22.0.0'}
 
   '@azure/core-process@1.0.0':
     resolution: {integrity: sha512-/shnJ+ooO8WPxDhPEeI/2oRQuubn16gZ6CvlbpWbEswZfzwI9tI/sMAHmF3x1LuQ9yZYXfLW3TjzGMLEC5blKg==}
     engines: {node: '>=22.0.0'}
 
-  '@azure/core-rest-pipeline@1.25.0':
-    resolution: {integrity: sha512-bMs8ekJLjX8wPV+9IPBges1SLPyuDtE9g5gLDWOpxzKcoOFQnpLGkbcT1tdw3FaAmDS1gnPmMmJ6y/T5B96kIA==}
+  '@azure/core-rest-pipeline@1.25.1':
+    resolution: {integrity: sha512-fTIA3CAm/cdODqiXkO6jYOIkU2Ylld7vq65KGc70gTwl12sLQsC8v7I5t6tp2N2CfUONzZBXyeFw7KEu6Ks2zg==}
     engines: {node: '>=22.0.0'}
 
   '@azure/core-tracing@1.4.0':
@@ -172,20 +172,16 @@ packages:
     resolution: {integrity: sha512-rbAE25KUfjU/s3XHUdJgceoCP5dEOpMx85J04kF+QMdta73XkuG9JGHHinch+XIoKpBdqljin+KqURpJriSzLA==}
     engines: {node: '>=22.0.0'}
 
-  '@azure/msal-browser@5.18.0':
-    resolution: {integrity: sha512-SPTeHYZghdEdRddJzNjhH+CI5MSQtquNYwGJnYXfOHIBRXCmrWimBS85OhwXpXFIlrCtNTbBPm5mPAWRNEoktA==}
+  '@azure/msal-browser@5.29.1':
+    resolution: {integrity: sha512-+TMoU/4h3KYUvQKZH+p1/9/iDaepDlVJQ7UMUAB6q8prPsMfsOoqA9m2alpPqLUQ48Bp7sXqN2wdhA9rOg9q1A==}
     engines: {node: '>=0.8.0'}
 
-  '@azure/msal-common@16.12.0':
-    resolution: {integrity: sha512-hgLgfRdbG2AmhXPygebf1KYJEvse86+ZZLWufdiTKaGRYEUqOzHdlf6AS1IiuUCHWbynkgbHc451jSNkbfhWlg==}
+  '@azure/msal-common@16.16.2':
+    resolution: {integrity: sha512-IVoPgAup0hnpzwC8esxPxrrnDDVe0n3mmK+UU3JRmKWySKxBQrl+a30tTP3okmJ9Wc7dh+IgoNaUXkCxb2DBSg==}
     engines: {node: '>=0.8.0'}
 
-  '@azure/msal-common@16.16.1':
-    resolution: {integrity: sha512-dSKdL9h/iercb4GumsKFh+wVvLe1ohuDPiviklgnQVHnY2FYNUlbQJ3E1Qd37vkof9CfraK9BQpCW1hoOg0znQ==}
-    engines: {node: '>=0.8.0'}
-
-  '@azure/msal-node@7.2.1':
-    resolution: {integrity: sha512-6mntsfCNq7H1eAPSZik74jT3C5at4nRqiVk7OC+D5Hy3Pe3s76uwE4+J0xvDvlVPmoX2kasf3mSwUmzeq9rW/A==}
+  '@azure/msal-node@7.2.2':
+    resolution: {integrity: sha512-MjsAHC+KUSXYYC8P57lVXy5IgSeO+PraXzLLHZI6hcX7nx/hCokY6gTPm2JcKLI3W88mu7ozjObBVGKExZUhww==}
     engines: {node: '>=20'}
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -439,6 +435,7 @@ packages:
   '@secretlint/secretlint-rule-preset-recommend@10.2.2':
     resolution: {integrity: sha512-K3jPqjva8bQndDKJqctnGfwuAxU2n9XNCPtbXVI5JvC7FnQiNg/yWlQPbMUlBXtBoBGFYp08A94m6fvtc9v+zA==}
     engines: {node: '>=20.0.0'}
+    deprecated: Built into secretlint v14 and later. Remove this package; the rule id still works. https://github.com/secretlint/secretlint/blob/HEAD/docs/rules/preset-recommend.md
 
   '@secretlint/source-creator@10.2.2':
     resolution: {integrity: sha512-h6I87xJfwfUTgQ7irWq7UTdq/Bm1RuQ/fYhA3dtTIAop5BwSFmZyrchph4WcoEvbN460BWKmk4RYSvPElIIvxw==}
@@ -448,11 +445,11 @@ packages:
     resolution: {integrity: sha512-Nqc90v4lWCXyakD6xNyNACBJNJ0tNCwj2WNk/7ivyacYHxiITVgmLUFXTBOeCdy79iz6HtN9Y31uw/jbLrdOAg==}
     engines: {node: '>=20.0.0'}
 
-  '@types/node@26.2.0':
-    resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
+  '@types/node@26.6.6':
+    resolution: {integrity: sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==}
 
-  '@types/vscode@1.134.0':
-    resolution: {integrity: sha512-NDEu0hg4sF7+vvFsADsktqUJ6f80LHSZvVK2Ovo1XiQ0/VHck1O3zst+ZZyVA/uvz6vo6LcuoqU2q48YMqOwWw==}
+  '@types/vscode@1.146.0':
+    resolution: {integrity: sha512-OtU25faeM997QQsW+D07FN9cX06j+EEI4aQaPw/UO3HWlCM39N1W7fG8ewhdZKluut31KffyMsmDzJzgMu6t8Q==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -574,66 +571,66 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@typespec/ts-http-runtime@0.3.8':
-    resolution: {integrity: sha512-bLMpVcWZNzq6lYOybwFwOAR1IXKcHnhUNqYeHjl1bET/qE3jFPFH+p8Wrh3rU4xwdnifPxmKNESBYnvnmc75aA==}
+  '@typespec/ts-http-runtime@0.3.10':
+    resolution: {integrity: sha512-vddvvtZ7sejSlCv+OIkn2ztjB1O31Fc2JsxI/YK725r3elXXlF/J3o3lbXJFRhoeWRWK1tjdZ+GTi6Fdtrp+EA==}
     engines: {node: '>=22.0.0'}
 
-  '@vscode/vsce-sign-alpine-arm64@2.0.6':
-    resolution: {integrity: sha512-wKkJBsvKF+f0GfsUuGT0tSW0kZL87QggEiqNqK6/8hvqsXvpx8OsTEc3mnE1kejkh5r+qUyQ7PtF8jZYN0mo8Q==}
+  '@vscode/vsce-sign-alpine-arm64@2.0.8':
+    resolution: {integrity: sha512-3HSEDf4R2zhI3/eckZPWBoeFUiLpnG9O0/NBW8xCM3j+Ri0uhmOPvCDuCYsUmIsFVUJETaMu+JMY2DF8v8hNPg==}
     cpu: [arm64]
     os: [alpine]
 
-  '@vscode/vsce-sign-alpine-x64@2.0.6':
-    resolution: {integrity: sha512-YoAGlmdK39vKi9jA18i4ufBbd95OqGJxRvF3n6ZbCyziwy3O+JgOpIUPxv5tjeO6gQfx29qBivQ8ZZTUF2Ba0w==}
+  '@vscode/vsce-sign-alpine-x64@2.0.8':
+    resolution: {integrity: sha512-rHbdV7+esCVn/t8KnbSN9CyMGImAmGnxFb1K9d2uSrt0WNPYfL12FGFekhz2yI8sFhIhyxD+vIKTSp9+kLx+5A==}
     cpu: [x64]
     os: [alpine]
 
-  '@vscode/vsce-sign-darwin-arm64@2.0.6':
-    resolution: {integrity: sha512-5HMHaJRIQuozm/XQIiJiA0W9uhdblwwl2ZNDSSAeXGO9YhB9MH5C4KIHOmvyjUnKy4UCuiP43VKpIxW1VWP4tQ==}
+  '@vscode/vsce-sign-darwin-arm64@2.0.8':
+    resolution: {integrity: sha512-/JSzSLCbXSlc+X7PfmHWnXczFHRmKURCwN1MGmJXjUJlWHgTDpaqjaJNMnBNqruyrbb6LRE/DMXTfRY9iwr4jA==}
     cpu: [arm64]
     os: [darwin]
 
-  '@vscode/vsce-sign-darwin-x64@2.0.6':
-    resolution: {integrity: sha512-25GsUbTAiNfHSuRItoQafXOIpxlYj+IXb4/qarrXu7kmbH94jlm5sdWSCKrrREs8+GsXF1b+l3OB7VJy5jsykw==}
+  '@vscode/vsce-sign-darwin-x64@2.0.8':
+    resolution: {integrity: sha512-iowH17iKIaAiC6TNGIksLmwtcKOHh/HT/pwKHwPZnuTLvdKWZ/8VOT+MphEt71EcWttohqUXx41SjdiCfUPBiA==}
     cpu: [x64]
     os: [darwin]
 
-  '@vscode/vsce-sign-linux-arm64@2.0.6':
-    resolution: {integrity: sha512-cfb1qK7lygtMa4NUl2582nP7aliLYuDEVpAbXJMkDq1qE+olIw/es+C8j1LJwvcRq1I2yWGtSn3EkDp9Dq5FdA==}
+  '@vscode/vsce-sign-linux-arm64@2.0.8':
+    resolution: {integrity: sha512-94aBLOVdO6eAOylUsyJ40/BdHtRrHuKAa/29KNOci2QtwUBAH9jTWJLpn1Yv+xjlUOaSjQC8UlAUtjqz/g6FPA==}
     cpu: [arm64]
     os: [linux]
 
-  '@vscode/vsce-sign-linux-arm@2.0.6':
-    resolution: {integrity: sha512-UndEc2Xlq4HsuMPnwu7420uqceXjs4yb5W8E2/UkaHBB9OWCwMd3/bRe/1eLe3D8kPpxzcaeTyXiK3RdzS/1CA==}
+  '@vscode/vsce-sign-linux-arm@2.0.8':
+    resolution: {integrity: sha512-SVzcxe2fx+1meLyO745eUiywrRDQIXwK/oZcwTrzYEkoVh4Val4/8CtDHIc5Z3EhHnwVBnqGqsbNwkR44k7rXA==}
     cpu: [arm]
     os: [linux]
 
-  '@vscode/vsce-sign-linux-x64@2.0.6':
-    resolution: {integrity: sha512-/olerl1A4sOqdP+hjvJ1sbQjKN07Y3DVnxO4gnbn/ahtQvFrdhUi0G1VsZXDNjfqmXw57DmPi5ASnj/8PGZhAA==}
+  '@vscode/vsce-sign-linux-x64@2.0.8':
+    resolution: {integrity: sha512-i55pKFRMF1nR94CMcFHbr3VQz7rQ8DFURvUd2Jymcbtv8qzhPX2otIHWzkcmAVr4dQApbYYCvRPjbP+i12ImQQ==}
     cpu: [x64]
     os: [linux]
 
-  '@vscode/vsce-sign-win32-arm64@2.0.6':
-    resolution: {integrity: sha512-ivM/MiGIY0PJNZBoGtlRBM/xDpwbdlCWomUWuLmIxbi1Cxe/1nooYrEQoaHD8ojVRgzdQEUzMsRbyF5cJJgYOg==}
+  '@vscode/vsce-sign-win32-arm64@2.0.8':
+    resolution: {integrity: sha512-2CoVlRNow2XkNboxlfx8hGdKLR2hvyBRg1O8gafx8I4F+scm1MLHdGcYV3+u3jXDsJaiSyDshTO5vPcLjQpVug==}
     cpu: [arm64]
     os: [win32]
 
-  '@vscode/vsce-sign-win32-x64@2.0.6':
-    resolution: {integrity: sha512-mgth9Kvze+u8CruYMmhHw6Zgy3GRX2S+Ed5oSokDEK5vPEwGGKnmuXua9tmFhomeAnhgJnL4DCna3TiNuGrBTQ==}
+  '@vscode/vsce-sign-win32-x64@2.0.8':
+    resolution: {integrity: sha512-93c+KXIvOsLlNLMEPtQBgJJgn2eaypv3G3+4O9RailUQTh9zL3ul/Fhnqf0O+NKOGKky9d/v+GYWhBwsAjZaww==}
     cpu: [x64]
     os: [win32]
 
-  '@vscode/vsce-sign@2.1.0':
-    resolution: {integrity: sha512-9AQrqazrBgTgRSuwleLVXUrIUphY02/SFCh2TKYoLV/xifJAdblhdmEmw5gUrYSPQ3sRwNs9iyCMD14sATEE6g==}
+  '@vscode/vsce-sign@2.1.1':
+    resolution: {integrity: sha512-Fm9SrvxonXpmzN0eKHKS/AHb/3Gc19c7SkGfSnhYOGPiLy2o8hJlIzx314IVSH//uEiKaAbE40P47wwFtyDByg==}
 
-  '@vscode/vsce@4.1.0':
-    resolution: {integrity: sha512-iWNykEfLWTAU7FC2iBiE0vJvnJDpGm3GlL89dsBtRs62F+8tkPtq80Imi0QSFHjNBWu4QIdYII+3F9v/ZQRExw==}
+  '@vscode/vsce@4.1.1':
+    resolution: {integrity: sha512-JYw4KtAmePIik4F+sGZo8GAfX6IApSQTBhXb28ivfmbzUoojfJHL9mupjV0E/cckzSdrxdu4jUCj8tKDddV5kQ==}
     engines: {node: '>= 22'}
     hasBin: true
 
-  agent-base@7.1.4:
-    resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
-    engines: {node: '>= 14'}
+  agent-base@9.0.0:
+    resolution: {integrity: sha512-TQf59BsZnytt8GdJKLPfUZ54g/iaUL2OWDSFCCvMOhsHduDQxO8xC4PNeyIkVcA5KwL2phPSv0douC0fgWzmnA==}
+    engines: {node: '>= 20'}
 
   azure-devops-node-api@12.5.0:
     resolution: {integrity: sha512-R5eFskGvOm3U/GzeAuxRkUsAl0hrAwGgWn6zAd2KrZmrEhWZVqLew4OOupbQlXUuojUzpGtq62SmdhJ06N88og==}
@@ -659,8 +656,8 @@ packages:
   buffer-equal-constant-time@1.0.1:
     resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
 
-  bundle-name@4.1.0:
-    resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
+  bundle-name@4.1.1:
+    resolution: {integrity: sha512-DdH81/zPLVS11EUgWq3tEu/xn+EzljlMYooDNdzWEnFha3R3NBMpMV1UqYIpjYHV/SgpFKMIX1Oh7o06SjM/oA==}
     engines: {node: '>=18'}
 
   call-bind-apply-helpers@1.0.2:
@@ -756,8 +753,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  graceful-fs@4.2.11:
-    resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+  graceful-fs@4.2.12:
+    resolution: {integrity: sha512-iuyGF2E4oafQfPsRrG2wtY2ILupMhvtdrhzrxB+0VcjsPpSPttpfYdjnGFGsTi5MaJFjI1jOKHPQ6UTbTj9TAw==}
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -775,13 +772,13 @@ packages:
     resolution: {integrity: sha512-kyCuEOWjJqZuDbRHzL8V93NzQhwIB71oFWSyzVo+KPZI+pnQPPxucdkrOZvkLRnrf5URsQM+IJ09Dw29cRALIA==}
     engines: {node: '>=10'}
 
-  http-proxy-agent@7.0.2:
-    resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
-    engines: {node: '>= 14'}
+  http-proxy-agent@9.1.0:
+    resolution: {integrity: sha512-2NxoveTT58mjYT4n3RPTEfCZGLMbidoO8XEieXfpSYxu+PQJ1qpx4ypwH6N+uF9twBPIvRRgvkvW5HUTYWENig==}
+    engines: {node: '>= 20'}
 
-  https-proxy-agent@7.0.6:
-    resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
-    engines: {node: '>= 14'}
+  https-proxy-agent@9.1.0:
+    resolution: {integrity: sha512-ag87y7cJJ9/3+GxFr8Oy4O5faDsGRGnBGsJj/YjOSsSx/5eadKLYTMPlzuR6obgoCDDm0abAAZitXXQkMOPSpA==}
+    engines: {node: '>= 20'}
 
   is-docker@3.0.0:
     resolution: {integrity: sha512-eljcgEDlEns/7AXFosB5K/2nCM4P7FQPkGc/DWLy5rmFEWvZayGrik1d9/QIY5nJ4f9YsVvBkA6kJpHn9rISdQ==}
@@ -892,8 +889,17 @@ packages:
   proper-lockfile@4.1.2:
     resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
 
-  qs@6.15.3:
-    resolution: {integrity: sha512-O9gl3zCl5h5blw1KGUzQKhA5oUXSl8rwUIM5o0S3nCXMliSvy5Dzx7/DJcI+SwgICv+IneSZwhBh1oSyEHA71A==}
+  proxy-agent-negotiate@1.1.0:
+    resolution: {integrity: sha512-N8IBcM3UgCVzz2L2Lqv8DVntDnnC8/hiV4nEDUPkqq72TPUgYWjQc+bdZlBPZK9LzPAvOY//gAt0S0DApoOXWQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      kerberos: ^2.0.0
+    peerDependenciesMeta:
+      kerberos:
+        optional: true
+
+  qs@6.17.1:
+    resolution: {integrity: sha512-jd3COkaKVgGUW+ZHyEHCG9bH7RoaaiWuMgzsIBjUMVjLAaWGWpoUAVwljVvBHxRu/2qEHnadLGZrkutYUBPQJA==}
     engines: {node: '>=0.6'}
 
   read@1.0.7:
@@ -915,8 +921,8 @@ packages:
     resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
     engines: {node: '>=11.0.0'}
 
-  semver@7.8.5:
-    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -954,8 +960,8 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
-  tslib@2.8.1:
-    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+  tslib@2.9.1:
+    resolution: {integrity: sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA==}
 
   tunnel@0.0.6:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
@@ -972,8 +978,8 @@ packages:
   underscore@1.13.8:
     resolution: {integrity: sha512-DXtD3ZtEQzc7M8m4cXotyHR+FAS18C64asBYY5vqZexfYryNNnDc02W4hKg3rdQuqOYas1jkseX0+nZXjTXnvQ==}
 
-  undici-types@8.3.0:
-    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+  undici-types@8.9.0:
+    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
   url-join@4.0.1:
     resolution: {integrity: sha512-jk1+QP6ZJqyOiuEI9AEWQfju/nB2Pw466kbA0LEZljHwKeMgd9WrAEgEGxjPDD2+TNbbb37rTyhEfrCXfuKXnA==}
@@ -1008,89 +1014,93 @@ snapshots:
 
   '@azure/abort-controller@2.2.0':
     dependencies:
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   '@azure/core-auth@1.11.0(supports-color@7.2.0)':
     dependencies:
       '@azure/abort-controller': 2.2.0
       '@azure/core-util': 1.14.0(supports-color@7.2.0)
-      tslib: 2.8.1
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
-  '@azure/core-client@1.11.0(supports-color@7.2.0)':
+  '@azure/core-client@1.11.2(supports-color@7.2.0)':
     dependencies:
       '@azure/abort-controller': 2.2.0
       '@azure/core-auth': 1.11.0(supports-color@7.2.0)
-      '@azure/core-rest-pipeline': 1.25.0(supports-color@7.2.0)
+      '@azure/core-rest-pipeline': 1.25.1(supports-color@7.2.0)
       '@azure/core-tracing': 1.4.0
       '@azure/core-util': 1.14.0(supports-color@7.2.0)
       '@azure/logger': 1.4.0(supports-color@7.2.0)
-      tslib: 2.8.1
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
   '@azure/core-process@1.0.0': {}
 
-  '@azure/core-rest-pipeline@1.25.0(supports-color@7.2.0)':
+  '@azure/core-rest-pipeline@1.25.1(supports-color@7.2.0)':
     dependencies:
       '@azure/abort-controller': 2.2.0
       '@azure/core-auth': 1.11.0(supports-color@7.2.0)
       '@azure/core-tracing': 1.4.0
       '@azure/core-util': 1.14.0(supports-color@7.2.0)
       '@azure/logger': 1.4.0(supports-color@7.2.0)
-      '@typespec/ts-http-runtime': 0.3.8(supports-color@7.2.0)
-      tslib: 2.8.1
+      '@typespec/ts-http-runtime': 0.3.10(supports-color@7.2.0)
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
   '@azure/core-tracing@1.4.0':
     dependencies:
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   '@azure/core-util@1.14.0(supports-color@7.2.0)':
     dependencies:
       '@azure/abort-controller': 2.2.0
-      '@typespec/ts-http-runtime': 0.3.8(supports-color@7.2.0)
-      tslib: 2.8.1
+      '@typespec/ts-http-runtime': 0.3.10(supports-color@7.2.0)
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
   '@azure/identity@4.14.1(supports-color@7.2.0)':
     dependencies:
       '@azure/abort-controller': 2.2.0
       '@azure/core-auth': 1.11.0(supports-color@7.2.0)
-      '@azure/core-client': 1.11.0(supports-color@7.2.0)
+      '@azure/core-client': 1.11.2(supports-color@7.2.0)
       '@azure/core-process': 1.0.0
-      '@azure/core-rest-pipeline': 1.25.0(supports-color@7.2.0)
+      '@azure/core-rest-pipeline': 1.25.1(supports-color@7.2.0)
       '@azure/core-tracing': 1.4.0
       '@azure/core-util': 1.14.0(supports-color@7.2.0)
       '@azure/logger': 1.4.0(supports-color@7.2.0)
-      '@azure/msal-browser': 5.18.0
-      '@azure/msal-node': 7.2.1
+      '@azure/msal-browser': 5.29.1
+      '@azure/msal-node': 7.2.2
       open: 11.0.4
-      tslib: 2.8.1
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
   '@azure/logger@1.4.0(supports-color@7.2.0)':
     dependencies:
-      '@typespec/ts-http-runtime': 0.3.8(supports-color@7.2.0)
-      tslib: 2.8.1
+      '@typespec/ts-http-runtime': 0.3.10(supports-color@7.2.0)
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
-  '@azure/msal-browser@5.18.0':
+  '@azure/msal-browser@5.29.1':
     dependencies:
-      '@azure/msal-common': 16.12.0
+      '@azure/msal-common': 16.16.2
 
-  '@azure/msal-common@16.12.0': {}
+  '@azure/msal-common@16.16.2': {}
 
-  '@azure/msal-common@16.16.1': {}
-
-  '@azure/msal-node@7.2.1':
+  '@azure/msal-node@7.2.2':
     dependencies:
-      '@azure/msal-common': 16.16.1
+      '@azure/msal-common': 16.16.2
       jsonwebtoken: 9.0.3
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -1246,11 +1256,11 @@ snapshots:
 
   '@secretlint/types@10.2.2': {}
 
-  '@types/node@26.2.0':
+  '@types/node@26.6.6':
     dependencies:
-      undici-types: 8.3.0
+      undici-types: 8.9.0
 
-  '@types/vscode@1.134.0': {}
+  '@types/vscode@1.146.0': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -1312,54 +1322,55 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@typespec/ts-http-runtime@0.3.8(supports-color@7.2.0)':
+  '@typespec/ts-http-runtime@0.3.10(supports-color@7.2.0)':
     dependencies:
-      http-proxy-agent: 7.0.2(supports-color@7.2.0)
-      https-proxy-agent: 7.0.6(supports-color@7.2.0)
-      tslib: 2.8.1
+      http-proxy-agent: 9.1.0(supports-color@7.2.0)
+      https-proxy-agent: 9.1.0(supports-color@7.2.0)
+      tslib: 2.9.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
-  '@vscode/vsce-sign-alpine-arm64@2.0.6':
+  '@vscode/vsce-sign-alpine-arm64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-alpine-x64@2.0.6':
+  '@vscode/vsce-sign-alpine-x64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-darwin-arm64@2.0.6':
+  '@vscode/vsce-sign-darwin-arm64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-darwin-x64@2.0.6':
+  '@vscode/vsce-sign-darwin-x64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-linux-arm64@2.0.6':
+  '@vscode/vsce-sign-linux-arm64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-linux-arm@2.0.6':
+  '@vscode/vsce-sign-linux-arm@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-linux-x64@2.0.6':
+  '@vscode/vsce-sign-linux-x64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-win32-arm64@2.0.6':
+  '@vscode/vsce-sign-win32-arm64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign-win32-x64@2.0.6':
+  '@vscode/vsce-sign-win32-x64@2.0.8':
     optional: true
 
-  '@vscode/vsce-sign@2.1.0':
+  '@vscode/vsce-sign@2.1.1':
     optionalDependencies:
-      '@vscode/vsce-sign-alpine-arm64': 2.0.6
-      '@vscode/vsce-sign-alpine-x64': 2.0.6
-      '@vscode/vsce-sign-darwin-arm64': 2.0.6
-      '@vscode/vsce-sign-darwin-x64': 2.0.6
-      '@vscode/vsce-sign-linux-arm': 2.0.6
-      '@vscode/vsce-sign-linux-arm64': 2.0.6
-      '@vscode/vsce-sign-linux-x64': 2.0.6
-      '@vscode/vsce-sign-win32-arm64': 2.0.6
-      '@vscode/vsce-sign-win32-x64': 2.0.6
+      '@vscode/vsce-sign-alpine-arm64': 2.0.8
+      '@vscode/vsce-sign-alpine-x64': 2.0.8
+      '@vscode/vsce-sign-darwin-arm64': 2.0.8
+      '@vscode/vsce-sign-darwin-x64': 2.0.8
+      '@vscode/vsce-sign-linux-arm': 2.0.8
+      '@vscode/vsce-sign-linux-arm64': 2.0.8
+      '@vscode/vsce-sign-linux-x64': 2.0.8
+      '@vscode/vsce-sign-win32-arm64': 2.0.8
+      '@vscode/vsce-sign-win32-x64': 2.0.8
 
-  '@vscode/vsce@4.1.0(supports-color@7.2.0)':
+  '@vscode/vsce@4.1.1(supports-color@7.2.0)':
     dependencies:
       '@azure/identity': 4.14.1(supports-color@7.2.0)
       '@napi-rs/keyring': 1.3.0
@@ -1368,7 +1379,7 @@ snapshots:
       '@secretlint/secretlint-rule-preset-recommend': 10.2.2
       '@secretlint/source-creator': 10.2.2
       '@secretlint/types': 10.2.2
-      '@vscode/vsce-sign': 2.1.0
+      '@vscode/vsce-sign': 2.1.1
       azure-devops-node-api: 12.5.0
       cockatiel: 3.2.1
       commander: 12.1.0
@@ -1380,7 +1391,7 @@ snapshots:
       parse5: 8.1.1
       proper-lockfile: 4.1.2
       read: 1.0.7
-      semver: 7.8.5
+      semver: 7.8.6
       tinyglobby: 0.2.17
       typed-rest-client: 1.8.11
       url-join: 4.0.1
@@ -1388,9 +1399,10 @@ snapshots:
       yauzl: 3.4.0
       yazl: 2.5.1
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
-  agent-base@7.1.4: {}
+  agent-base@9.0.0: {}
 
   azure-devops-node-api@12.5.0:
     dependencies:
@@ -1413,7 +1425,7 @@ snapshots:
 
   buffer-equal-constant-time@1.0.1: {}
 
-  bundle-name@4.1.0:
+  bundle-name@4.1.1:
     dependencies:
       run-applescript: 7.1.0
 
@@ -1441,7 +1453,7 @@ snapshots:
 
   default-browser@5.5.1:
     dependencies:
-      bundle-name: 4.1.0
+      bundle-name: 4.1.1
       default-browser-id: 5.0.1
 
   define-lazy-prop@3.0.0: {}
@@ -1525,7 +1537,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  graceful-fs@4.2.11: {}
+  graceful-fs@4.2.12: {}
 
   has-flag@4.0.0:
     optional: true
@@ -1540,18 +1552,22 @@ snapshots:
     dependencies:
       lru-cache: 6.0.0
 
-  http-proxy-agent@7.0.2(supports-color@7.2.0):
+  http-proxy-agent@9.1.0(supports-color@7.2.0):
     dependencies:
-      agent-base: 7.1.4
+      agent-base: 9.0.0
       debug: 4.4.3(supports-color@7.2.0)
+      proxy-agent-negotiate: 1.1.0
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
-  https-proxy-agent@7.0.6(supports-color@7.2.0):
+  https-proxy-agent@9.1.0(supports-color@7.2.0):
     dependencies:
-      agent-base: 7.1.4
+      agent-base: 9.0.0
       debug: 4.4.3(supports-color@7.2.0)
+      proxy-agent-negotiate: 1.1.0
     transitivePeerDependencies:
+      - kerberos
       - supports-color
 
   is-docker@3.0.0: {}
@@ -1585,7 +1601,7 @@ snapshots:
       lodash.isstring: 4.0.1
       lodash.once: 4.1.1
       ms: 2.1.3
-      semver: 7.8.5
+      semver: 7.8.6
 
   jwa@2.0.1:
     dependencies:
@@ -1653,11 +1669,13 @@ snapshots:
 
   proper-lockfile@4.1.2:
     dependencies:
-      graceful-fs: 4.2.11
+      graceful-fs: 4.2.12
       retry: 0.12.0
       signal-exit: 3.0.7
 
-  qs@6.15.3:
+  proxy-agent-negotiate@1.1.0: {}
+
+  qs@6.17.1:
     dependencies:
       es-define-property: 1.0.1
       side-channel: 1.1.1
@@ -1674,7 +1692,7 @@ snapshots:
 
   sax@1.6.1: {}
 
-  semver@7.8.5: {}
+  semver@7.8.6: {}
 
   side-channel-list@1.0.1:
     dependencies:
@@ -1724,13 +1742,13 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.7)
       picomatch: 4.0.7
 
-  tslib@2.8.1: {}
+  tslib@2.9.1: {}
 
   tunnel@0.0.6: {}
 
   typed-rest-client@1.8.11:
     dependencies:
-      qs: 6.15.3
+      qs: 6.17.1
       tunnel: 0.0.6
       underscore: 1.13.8
 
@@ -1759,7 +1777,7 @@ snapshots:
 
   underscore@1.13.8: {}
 
-  undici-types@8.3.0: {}
+  undici-types@8.9.0: {}
 
   url-join@4.0.1: {}
 
