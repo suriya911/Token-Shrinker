@@ -3,9 +3,27 @@
 This guide covers moving between published Token-Shrinker versions. Each section lists
 required actions, observable behavior changes, and anything that is safe to ignore.
 
-Released versions to date are `0.1.0`, `0.1.1`, `0.1.2`, `0.1.3`, and `0.2.0`. `0.2.2` is the current release candidate. All are pre-`1.0` alpha releases.
+Released versions to date are `0.1.0`, `0.1.1`, `0.1.2`, `0.1.3`, `0.2.0`, and `0.2.2`. All are pre-`1.0` alpha releases.
 Until `1.0.0` ships, the compatibility guarantees in [Compatibility policy](#compatibility-policy)
 describe intent rather than a frozen contract.
+
+## 0.2.0 to 0.2.2
+
+`0.2.2` adds idempotent global setup/status for supported local agents and generated workflow
+guidance for optional provider selection, context refresh, Graphify refresh, RTK terminal
+routing, Claude-Mem search, and Caveman output defaults. These integrations remain local
+configuration and MCP adapters; they do not intercept browser-hosted ChatGPT, Gemini, or
+Claude web conversations.
+
+```bash
+npm install --global @token-shrinker/cli@0.2.2
+token-shrinker setup --global
+token-shrinker status --global
+```
+
+Existing project configuration is preserved. Run `token-shrinker doctor --json` after setup
+and review the reported adapter/provider status. Optional providers remain fail-open to the
+built-in implementation when their executable or MCP server is unavailable.
 
 ## 0.1.3 to 0.2.0
 
@@ -82,7 +100,8 @@ therefore are not comparable across the two versions.
 
 - No SQLite memory or telemetry schema changes. Existing databases are read as-is.
 - No configuration file changes. Existing `token-shrinker` config remains valid.
-- No MCP tool additions, removals, or signature changes. All nine tools are unchanged.
+- The MCP surface adds task continuity and exact token-measurement tools while preserving the
+  existing protocol and response envelope. Clients should tolerate the additive descriptors.
 - No adapter reinstall required. Installed adapters keep working against the new binary.
 
 ## Downgrading
@@ -120,6 +139,7 @@ The following are expected to change before `v1.0.0` and should not be depended 
 ## Related documents
 
 - [CHANGELOG.md](../../CHANGELOG.md) for the full list of changes per release.
+- [Release notes 0.2.2](./RELEASE_NOTES_0.2.2.md) for the current pre-1.0 release candidate.
 - [Release notes 0.1.1](./RELEASE_NOTES_0.1.1.md) and [0.1.0](./RELEASE_NOTES_0.1.0.md).
 - [Publishing runbook](./PUBLISHING.md) for maintainer release steps.
 - [Release try-out guide](./TRY_IT.md) for clean-install verification.
