@@ -95,6 +95,7 @@ const DEMO_BASELINE: &[&str] = &[
     "src/notifications/digest.mjs",
     "tests/session.test.mjs",
 ];
+const DEMO_REPORT_SCHEMA_VERSION: u64 = 2;
 
 fn benchmark_command(args: &[String]) -> Result<Value, CliError> {
     if args.first().map(String::as_str) != Some("demo") {
@@ -139,6 +140,87 @@ fn compressed_demo_terminal(terminal: String) -> Result<(u64, u128), CliError> {
         .count(&serde_json::to_string(&summary)?)
         .tokens();
     Ok((tokens, latency))
+}
+
+fn command_version(program: &str) -> String {
+    Command::new(program)
+        .arg("--version")
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "unknown".to_owned())
+}
+
+fn env_string(key: &str) -> String {
+    env::var(key)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "unknown".to_owned())
+}
+
+fn env_u64(key: &str, fallback: u64) -> u64 {
+    env::var(key)
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(fallback)
+}
+
+fn git_commit(root: &Path) -> Option<String> {
+    Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+fn git_dirty(root: &Path) -> Option<bool> {
+    Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["status", "--porcelain", "--untracked-files=no"])
+        .output()
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| !output.stdout.is_empty())
+}
+
+fn reproducibility_metadata(root: &Path, latencies: (u128, u128, u128)) -> Value {
+    let cpu = env::var("TOKEN_SHRINKER_BENCH_CPU")
+        .or_else(|_| env::var("PROCESSOR_IDENTIFIER"))
+        .unwrap_or_else(|_| {
+            format!(
+                "{} ({} logical CPUs)",
+                env::consts::ARCH,
+                std::thread::available_parallelism().map_or(0, std::num::NonZero::get)
+            )
+        });
+    let memory_bytes = env::var("TOKEN_SHRINKER_BENCH_MEMORY_BYTES")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok());
+    json!({
+        "gitCommit": git_commit(root),
+        "gitDirty": git_dirty(root),
+        "cpu": cpu,
+        "memoryBytes": memory_bytes,
+        "filesystem": env_string("TOKEN_SHRINKER_BENCH_FILESYSTEM"),
+        "powerMode": env_string("TOKEN_SHRINKER_BENCH_POWER_MODE"),
+        "rustVersion": command_version("rustc"),
+        "nodeVersion": command_version("node"),
+        "warmupCount": env_u64("TOKEN_SHRINKER_BENCH_WARMUP_COUNT", 0),
+        "sampleCount": env_u64("TOKEN_SHRINKER_BENCH_SAMPLE_COUNT", 1),
+        "rawSamples": {
+            "routingMicros": [latencies.0],
+            "contextBuildMicros": [latencies.1],
+            "compressionMicros": [latencies.2]
+        },
+        "cacheState": env_string("TOKEN_SHRINKER_BENCH_CACHE_STATE")
+    })
 }
 
 fn demo_report(root: &Path) -> Result<Value, CliError> {
@@ -214,14 +296,23 @@ fn demo_report(root: &Path) -> Result<Value, CliError> {
         && citation_correct
         && root_cause_found
         && !selected.iter().any(|value| value.starts_with("secrets/"));
+    let reproducibility = reproducibility_metadata(
+        root,
+        (
+            routing_latency_micros,
+            context_latency_micros,
+            compression_latency_micros,
+        ),
+    );
     Ok(json!({
-        "schemaVersion": 1,
+        "schemaVersion": DEMO_REPORT_SCHEMA_VERSION,
         "fixture": "demo-repo",
         "task": DEMO_TASK,
         "route": route_decision,
         "providers": {"context":"native-repository","terminalCompression":"builtin-terminal","optionalProviders":false},
         "tokenizer": {"id":counter.id().as_str(),"precision":"estimated"},
         "environment": {"os":std::env::consts::OS,"arch":std::env::consts::ARCH,"binaryVersion":env!("CARGO_PKG_VERSION")},
+        "reproducibility": reproducibility,
         "fixtureManifest": "fixtures/demo-manifest.yaml",
         "latencyMicros": {"routing":routing_latency_micros,"contextBuild":context_latency_micros,"compression":compression_latency_micros},
         "baseline": {"contextTokens":baseline_context,"terminalTokens":baseline_terminal,"totalTokens":baseline_total},
@@ -923,6 +1014,26 @@ mod tests {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/demo-repo");
         let report = demo_report(&root).expect("demo report");
         assert_eq!(report["passed"], true);
+        assert_eq!(report["schemaVersion"], DEMO_REPORT_SCHEMA_VERSION);
+        for field in [
+            "gitCommit",
+            "gitDirty",
+            "cpu",
+            "memoryBytes",
+            "filesystem",
+            "powerMode",
+            "rustVersion",
+            "nodeVersion",
+            "warmupCount",
+            "sampleCount",
+            "rawSamples",
+            "cacheState",
+        ] {
+            assert!(
+                report["reproducibility"].get(field).is_some(),
+                "missing {field}"
+            );
+        }
         assert!(report["reductionBasisPoints"].as_u64().unwrap() >= 3_000);
         assert!(
             report["requiredEvidenceRecallBasisPoints"]

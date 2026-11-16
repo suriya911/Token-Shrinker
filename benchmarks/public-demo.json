@@ -10,6 +10,24 @@
     "binaryVersion": "0.2.2",
     "os": "windows"
   },
+  "reproducibility": {
+    "gitCommit": "7291f9327de9a581327b240365c5e343eb622ba4",
+    "gitDirty": true,
+    "cpu": "AMD64 Family 25 Model 117 Stepping 2, AuthenticAMD",
+    "memoryBytes": null,
+    "filesystem": "unknown",
+    "powerMode": "unknown",
+    "rustVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "nodeVersion": "v26.13.0",
+    "warmupCount": 0,
+    "sampleCount": 1,
+    "rawSamples": {
+      "routingMicros": [13],
+      "contextBuildMicros": [4551],
+      "compressionMicros": [18]
+    },
+    "cacheState": "unknown"
+  },
   "fixture": "demo-repo",
   "fixtureManifest": "fixtures/demo-manifest.yaml",
   "latencyMicros": {
@@ -39,7 +57,7 @@
       "budget_override"
     ]
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "secretCanaryExcluded": true,
   "selectedSources": [
     "src/auth/session.mjs",

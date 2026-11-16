@@ -30,11 +30,38 @@ for (const section of ["Trust boundaries", "Threats, mitigations, and verificati
 }
 
 const report = JSON.parse(readFileSync("benchmarks/public-demo.json", "utf8"));
+if (report.schemaVersion !== 2) fail("public demo report must use schema v2");
 if (report.passed !== true) fail("public demo did not pass");
 if (report.reductionBasisPoints < 3000) fail("context reduction is below 30%");
 if (report.requiredEvidenceRecallBasisPoints < 9500) fail("evidence recall is below 95%");
 if (report.citationCorrectnessBasisPoints !== 10000) fail("citations are not 100% correct");
 if (report.providers.optionalProviders !== false) fail("optional provider must be disabled");
+const reproducibility = report.reproducibility;
+for (const field of [
+  "gitCommit",
+  "gitDirty",
+  "cpu",
+  "memoryBytes",
+  "filesystem",
+  "powerMode",
+  "rustVersion",
+  "nodeVersion",
+  "warmupCount",
+  "sampleCount",
+  "rawSamples",
+  "cacheState",
+]) {
+  if (!(field in (reproducibility ?? {}))) fail(`reproducibility field missing: ${field}`);
+}
+if (!Number.isInteger(reproducibility.warmupCount) || reproducibility.warmupCount < 0) {
+  fail("reproducibility warmupCount must be a nonnegative integer");
+}
+if (!Number.isInteger(reproducibility.sampleCount) || reproducibility.sampleCount < 1) {
+  fail("reproducibility sampleCount must be a positive integer");
+}
+if (!reproducibility.rawSamples || typeof reproducibility.rawSamples !== "object") {
+  fail("reproducibility rawSamples must be an object");
+}
 
 // Published evidence must describe the version we are shipping. Without this, a stale report
 // keeps satisfying the thresholds above long after the binary it measured stopped existing.
