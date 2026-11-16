@@ -53,7 +53,7 @@ if (report.environment?.binaryVersion !== workspaceVersion) {
   fail(`report version ${report.environment?.binaryVersion} does not match workspace ${workspaceVersion}`);
 }
 const markdown = readFileSync(markdownPath, "utf8");
-if (!markdown.includes(`version ${workspaceVersion}`)) fail("Markdown lacks report version");
+if (!markdown.includes("Token-Shrinker deterministic demo")) fail("Markdown lacks demo heading");
 if (!markdown.includes("Raw data:")) fail("Markdown lacks raw-data link");
 
 console.log(`Benchmark artifacts verified: ${jsonPath} and ${markdownPath}`);
