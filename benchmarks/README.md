@@ -28,4 +28,6 @@ machine-specific. Run it on documented reference hardware before publishing perf
 The acceptance gate compares raw and optimized context with the same labeled conservative counter,
 requires at least 30% reduction, 95% required-evidence recall, 100% citation correctness, the
 expected root cause, and exclusion of the synthetic secret canary. Latency samples are descriptive,
-not a cross-machine regression threshold.
+not a cross-machine regression threshold. CI additionally runs the release-mode performance gate,
+which enforces the Section 15 v1 router, warm-context, daemon-readiness, and idle-memory budgets
+on each supported runner.

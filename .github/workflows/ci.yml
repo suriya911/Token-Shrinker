@@ -54,6 +54,9 @@ jobs:
       - name: Build release binary
         run: cargo build --release --bin token-shrinker
 
+      - name: Enforce performance budgets
+        run: cargo run --release -p token-shrinker-cli --example performance_gate
+
       - name: Verify native release package
         run: node scripts/verify-native-package.mjs
         env:
