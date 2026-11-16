@@ -543,14 +543,28 @@ impl DaemonHandle {
                 shutdown_timeout,
             );
         });
-        Ok(Self {
+        let handle = Self {
             discovery,
             discovery_path,
             graph,
             thread: Some(server_thread),
             _lock: lock,
             max_frame_bytes,
-        })
+        };
+        // The discovery file is intentionally written before spawning the accept loop so other
+        // processes can locate the endpoint, but the first request can still race the thread's
+        // listener initialization on macOS. Complete a read-only health handshake before
+        // reporting startup success; no mutating request is retried.
+        for attempt in 0..50 {
+            match handle.call("health", Value::Null) {
+                Ok(_) => return Ok(handle),
+                Err(error) if is_startup_transport_race(&error) && attempt < 49 => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        unreachable!("startup readiness loop always returns")
     }
 
     /// Returns the ready discovery record.
@@ -610,6 +624,19 @@ impl DaemonHandle {
         }
         Ok(())
     }
+}
+
+fn is_startup_transport_race(error: &DaemonError) -> bool {
+    matches!(
+        error,
+        DaemonError::Protocol(ProtocolError::Io(io_error))
+            if matches!(
+                io_error.kind(),
+                io::ErrorKind::BrokenPipe
+                    | io::ErrorKind::ConnectionRefused
+                    | io::ErrorKind::NotConnected
+            )
+    )
 }
 
 impl Drop for DaemonHandle {
