@@ -57,6 +57,23 @@ jobs:
       - name: Enforce performance budgets
         run: cargo run --release -p token-shrinker-cli --example performance_gate
 
+      - name: Generate benchmark artifacts
+        run: node scripts/run-demo.mjs
+        env:
+          TOKEN_SHRINKER_DEMO_OUTPUT: ci-benchmark/public-demo.json
+          TOKEN_SHRINKER_RELEASE: "1"
+
+      - name: Verify benchmark artifacts
+        run: node scripts/verify-benchmark-artifacts.mjs ci-benchmark/public-demo.json
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: token-shrinker-benchmark-${{ matrix.os }}
+          path: ci-benchmark/*
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Verify native release package
         run: node scripts/verify-native-package.mjs
         env:

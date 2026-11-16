@@ -8,13 +8,30 @@
  * toolchain; CI never sets the variable.
  */
 import { spawnSync } from "node:child_process";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import process from "node:process";
 
 const binary = process.env.TOKEN_SHRINKER_BINARY;
-const demoArgs = ["benchmark", "demo", "--json"];
+const output = process.env.TOKEN_SHRINKER_DEMO_OUTPUT;
+if (output) mkdirSync(dirname(output), { recursive: true });
+const demoArgs = [
+  "benchmark",
+  "demo",
+  "--json",
+  ...(output ? ["--output", output] : []),
+];
 const run = binary
   ? spawnSync(binary, demoArgs, { encoding: "utf8" })
-  : spawnSync("cargo", ["run", "-q", "-p", "token-shrinker-cli", "--", ...demoArgs],
+  : spawnSync("cargo", [
+      "run",
+      "-q",
+      ...(process.env.TOKEN_SHRINKER_RELEASE === "1" ? ["--release"] : []),
+      "-p",
+      "token-shrinker-cli",
+      "--",
+      ...demoArgs,
+    ],
       { encoding: "utf8" });
 
 if (run.error) {
