@@ -574,7 +574,15 @@ impl DaemonHandle {
     ///
     /// Returns [`DaemonError`] when shutdown transport or joining fails.
     pub fn shutdown(mut self) -> Result<(), DaemonError> {
-        let _ = self.call("daemon.shutdown", Value::Null)?;
+        if let Err(error) = self.call("daemon.shutdown", Value::Null)
+            && !matches!(
+                &error,
+                DaemonError::Protocol(ProtocolError::Io(io_error))
+                    if io_error.kind() == io::ErrorKind::BrokenPipe
+            )
+        {
+            return Err(error);
+        }
         self.graph.begin_shutdown();
         if let Some(thread) = self.thread.take() {
             thread.join().map_err(|_| DaemonError::ServerThread)?;
