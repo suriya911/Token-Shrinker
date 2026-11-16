@@ -10,6 +10,7 @@ permissions:
   contents: read
   id-token: write
   attestations: write
+  artifact-metadata: write
 
 concurrency:
   group: release-candidate-${{ github.ref }}
@@ -107,7 +108,7 @@ jobs:
           subject-path: release/*.tgz
           sbom-path: release/token-shrinker.cdx.json
 
-      - name: Attest release artifacts
+      - name: Attest release provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: release/*
@@ -137,3 +138,6 @@ jobs:
 
       - name: Verify every artifact checksum
         run: node scripts/verify-rc-artifacts.mjs release-candidates
+
+      - name: Verify provenance configuration
+        run: node scripts/verify-release-provenance.mjs .github/workflows/release-candidate.yml
