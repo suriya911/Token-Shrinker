@@ -53,6 +53,8 @@ After every job passes, inspect and approve the staged packages in this order: a
 9. Verify the public npm provenance, package contents, checksums, attestations, and Marketplace identity from a clean machine.
 10. Run the full benchmark and 24-hour daemon soak. Record memory growth, crashes, reconnect behavior, and exact commit/artifact hashes.
 
+The compatibility manifest signing ceremony is separate from artifact construction. Prepare an unsigned manifest only after every referenced artifact is public, then run `scripts/sign-compatibility-manifest.mjs` with `TOKEN_SHRINKER_ED25519_PRIVATE_KEY` (a 32-byte hex/base64 seed) and `TOKEN_SHRINKER_SIGNING_KEY_ID` supplied by the protected release environment. Publish no private key or unsigned placeholder. Verify the result from a separate environment with `scripts/verify-compatibility-manifest.mjs` and `TOKEN_SHRINKER_ED25519_PUBLIC_KEY` before publishing it.
+
 ## Stable promotion
 
 After maintainer approval and a passing soak, build stable artifacts from the protected `v1.0.0` tag. Re-run clean installation and verification, publish the distinct stable VS Code version, then move npm's `latest` dist-tag only after every referenced artifact is public and verified. Publish the signed compatibility manifest last.
