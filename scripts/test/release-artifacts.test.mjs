@@ -17,11 +17,13 @@ test("release artifact verifier checks every platform checksum set", async () =>
       const directory = join(root, `token-shrinker-${target}`);
       await mkdir(directory, { recursive: true });
       const content = `artifact-${target}`;
+      const line = `${digest(content)} *artifact.tgz\n`;
       await writeFile(join(directory, "artifact.tgz"), content);
       await writeFile(
         join(directory, "SHA256SUMS.txt"),
-        `${digest(content)} *artifact.tgz\n`,
+        line,
       );
+      await writeFile(join(directory, "artifact.tgz.sha256"), line);
     }
 
     const script = join(process.cwd(), "scripts", "verify-rc-artifacts.mjs");
@@ -32,6 +34,15 @@ test("release artifact verifier checks every platform checksum set", async () =>
     const invalid = spawnSync(process.execPath, [script, root], { encoding: "utf8" });
     assert.notEqual(invalid.status, 0);
     assert.match(invalid.stderr, /checksum mismatch/u);
+
+    await writeFile(join(root, "token-shrinker-linux", "artifact.tgz"), "artifact-linux");
+    await writeFile(
+      join(root, "token-shrinker-linux", "artifact.tgz.sha256"),
+      `${digest("wrong")} *artifact.tgz\n`,
+    );
+    const badSidecar = spawnSync(process.execPath, [script, root], { encoding: "utf8" });
+    assert.notEqual(badSidecar.status, 0);
+    assert.match(badSidecar.stderr, /sidecar mismatch/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

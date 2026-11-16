@@ -33,6 +33,8 @@ for (const checksumPath of checksumFiles) {
     const filePath = join(directory, match[2]);
     const actual = createHash("sha256").update(await readFile(filePath)).digest("hex");
     if (actual !== match[1]) fail(`checksum mismatch for ${filePath}`);
+    const sidecar = (await readFile(`${filePath}.sha256`, "utf8")).trim();
+    if (sidecar !== line) fail(`sidecar mismatch for ${filePath}`);
     checked += 1;
   }
 }
