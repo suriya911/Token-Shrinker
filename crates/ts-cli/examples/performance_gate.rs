@@ -14,8 +14,8 @@ use token_shrinker_daemon::{
     BuiltInHandler, CapabilityRegistry, DaemonConfig, DaemonError, DaemonHandle,
     build_baseline_context,
 };
-use token_shrinker_router::{RouterConfig, route};
 use token_shrinker_protocol::ProtocolError;
+use token_shrinker_router::{RouterConfig, route};
 use token_shrinker_types::{RouteOperation, RouteRequest, RouteScope, TokenBudget};
 
 const SAMPLES: usize = 25;
