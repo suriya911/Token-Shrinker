@@ -22,6 +22,30 @@ const allFiles = await filesUnder(root);
 const checksumFiles = allFiles.filter((path) => path.endsWith("SHA256SUMS.txt"));
 if (checksumFiles.length < 4) fail(`expected at least 4 platform checksum files, found ${checksumFiles.length}`);
 
+const sbomFiles = allFiles.filter((path) => path.endsWith(".cdx.json"));
+if (sbomFiles.length !== 1) fail(`expected exactly one CycloneDX SBOM, found ${sbomFiles.length}`);
+let sbom;
+try {
+  sbom = JSON.parse(await readFile(sbomFiles[0], "utf8"));
+} catch (error) {
+  fail(`could not parse SBOM ${sbomFiles[0]}: ${error.message}`);
+}
+if (sbom.bomFormat !== "CycloneDX") fail(`SBOM ${sbomFiles[0]} is not CycloneDX`);
+if (typeof sbom.specVersion !== "string" || !/^1\.\d+$/u.test(sbom.specVersion)) {
+  fail(`SBOM ${sbomFiles[0]} has unsupported CycloneDX specVersion`);
+}
+if (!Array.isArray(sbom.components) || sbom.components.length === 0) {
+  fail(`SBOM ${sbomFiles[0]} has no components`);
+}
+for (const [index, component] of sbom.components.entries()) {
+  if (!component || typeof component !== "object" ||
+      typeof component.type !== "string" ||
+      typeof component.name !== "string" ||
+      typeof component.version !== "string") {
+    fail(`SBOM ${sbomFiles[0]} has an invalid component at index ${index}`);
+  }
+}
+
 let checked = 0;
 for (const checksumPath of checksumFiles) {
   const directory = join(checksumPath, "..");
@@ -39,4 +63,4 @@ for (const checksumPath of checksumFiles) {
   }
 }
 
-console.log(`Release-candidate artifacts verified: ${checksumFiles.length} checksum sets, ${checked} files`);
+console.log(`Release-candidate artifacts verified: ${checksumFiles.length} checksum sets, ${checked} files, 1 CycloneDX SBOM`);
