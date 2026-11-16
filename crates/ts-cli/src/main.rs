@@ -329,7 +329,10 @@ fn demo_report(root: &Path) -> Result<Value, CliError> {
 
 fn demo_markdown(report: &Value) -> String {
     format!(
-        "# Token-Shrinker deterministic demo\n\n| Metric | Baseline | Optimized |\n|---|---:|---:|\n| Context tokens | {} | {} |\n| Terminal tokens | {} | {} |\n| Total comparable tokens | {} | {} |\n\n- Reduction: {:.2}%\n- Required evidence recall: {:.2}%\n- Citation correctness: {:.2}%\n- Optional providers: disabled\n- Result: **PASS**\n",
+        "# Token-Shrinker deterministic demo\n\nGenerated at version {} on {}/{}, with every optional provider disabled.\n\n| Metric | Baseline | Optimized |\n|---|---:|---:|\n| Context tokens | {} | {} |\n| Terminal tokens | {} | {} |\n| Total comparable tokens | {} | {} |\n\n- Reduction: {:.2}%\n- Required evidence recall: {:.2}%\n- Citation correctness: {:.2}%\n- Optional providers: disabled\n- Report schema: v{}\n- Result: **PASS**\n",
+        report["environment"]["binaryVersion"],
+        report["environment"]["os"],
+        report["environment"]["arch"],
         report["baseline"]["contextTokens"],
         report["optimized"]["contextTokens"],
         report["baseline"]["terminalTokens"],
@@ -345,6 +348,7 @@ fn demo_markdown(report: &Value) -> String {
             .as_f64()
             .unwrap_or_default()
             / 100.0,
+        report["schemaVersion"],
     )
 }
 
