@@ -11,9 +11,11 @@ use std::{
 };
 use tempfile::TempDir;
 use token_shrinker_daemon::{
-    BuiltInHandler, CapabilityRegistry, DaemonConfig, DaemonHandle, build_baseline_context,
+    BuiltInHandler, CapabilityRegistry, DaemonConfig, DaemonError, DaemonHandle,
+    build_baseline_context,
 };
 use token_shrinker_router::{RouterConfig, route};
+use token_shrinker_protocol::ProtocolError;
 use token_shrinker_types::{RouteOperation, RouteRequest, RouteScope, TokenBudget};
 
 const SAMPLES: usize = 25;
@@ -77,6 +79,27 @@ fn daemon_config(directory: &TempDir) -> DaemonConfig {
     }
 }
 
+fn daemon_health(daemon: &DaemonHandle) -> Result<serde_json::Value, DaemonError> {
+    let mut last_error = None;
+    for _ in 0..10 {
+        match daemon.call("health", serde_json::Value::Null) {
+            Ok(value) => return Ok(value),
+            Err(error)
+                if matches!(
+                    &error,
+                    DaemonError::Protocol(ProtocolError::Io(io_error))
+                        if io_error.kind() == std::io::ErrorKind::BrokenPipe
+                ) =>
+            {
+                last_error = Some(error);
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Err(last_error.expect("health retry error"))
+}
+
 #[allow(clippy::too_many_lines)]
 fn main() {
     let mut failures = Vec::new();
@@ -134,9 +157,7 @@ fn main() {
                 std::sync::Arc::new(BuiltInHandler::new(CapabilityRegistry::default())),
             )
             .expect("daemon start");
-            daemon
-                .call("health", serde_json::Value::Null)
-                .expect("health");
+            daemon_health(&daemon).expect("health");
             let elapsed = started.elapsed().as_micros();
             daemon.shutdown().expect("daemon shutdown");
             elapsed
