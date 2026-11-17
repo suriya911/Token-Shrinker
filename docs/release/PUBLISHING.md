@@ -2,6 +2,14 @@
 
 Public release is intentionally split into preparation, release candidate, soak, and promotion. Never publish from a developer laptop as the default path.
 
+## Named release owners
+
+Until a different maintainer is recorded, `@suriya911` is the support and rollback owner,
+matching the repository CODEOWNERS file. This owner is responsible for release approval,
+security-response coordination, npm/Marketplace decisions, compatibility-manifest signing-key
+custody, and rollback or yank actions. Do not infer a replacement owner from an issue comment or
+automated account.
+
 ## One-time ownership setup
 
 The release owner must complete these account-bound steps:
