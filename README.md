@@ -11,7 +11,7 @@ Token-Shrinker reduces the context and terminal output sent to an LLM while pres
 
 The project uses a Rust core for low-latency routing, ranking, execution, storage, and IPC. TypeScript provides the npm installer, JavaScript SDK, agent adapters, and VS Code integration.
 
-> **Project status:** v0.1.1 is public on every shipping surface — npm (`latest` and `next` both point to 0.1.1), the Claude Code and Codex marketplace plugins, and the Visual Studio Marketplace extension. Rust crates are not published. M8 release-candidate hardening toward `v1.0.0` is in progress.
+> **Project status:** the repository is coordinated at v0.2.2 across the npm workspace, adapters, plugins, and VS Code extension. Publication and stable-release gates remain tracked in M8; Rust crates are not published.
 
 ## Why Token-Shrinker?
 
@@ -636,7 +636,7 @@ Recommended order for the core product: MCP Inspector and Criterion.rs first, th
 - [x] M5: Claude Code, Codex CLI, Gemini CLI, OpenCode, and Aider adapters
 - [x] M6: Graphify, Headroom, RTK, Claude-Mem/external MCP memory adapters
 - [x] M7: VS Code extension, public demo, benchmark report, and security review
-- [x] v0.1.1: public npm release (`@token-shrinker/cli`, `@token-shrinker/sdk`, native packages), Claude/Codex marketplace plugins, and Visual Studio Marketplace extension published
+- [x] v0.2.2: coordinated release metadata, global adapter setup/status, signed release checks, and VS Code packaging are complete in the repository
 - [ ] M8: compatibility freeze, changelog/migration guide, signed provenance, clean-machine tests, 24h soak, and `v1.0.0`
 - [ ] Post-v1: transactional managed updater, rollback, compatibility watcher, and opt-in scheduler
 
@@ -663,8 +663,8 @@ Third-party optional tools retain their own licenses and are not bundled unless 
 ## Publication coordinates
 
 - Repository: `https://github.com/suriya911/Token-Shrinker`
-- npm scope: `@token-shrinker/*`; ownership verified, packages public at 0.1.1
-- VS Code extension: `token-shrinker.token-shrinker`, public at 0.1.1
+- npm scope: `@token-shrinker/*`; publication status is verified during the release gate
+- VS Code extension: `token-shrinker.token-shrinker`; publication status is verified during the release gate
 - Rust crate names: registry ownership must be verified during M8
 - Maintainer and release owner: GitHub user `suriya911` during pre-alpha
 - Security reports: GitHub private vulnerability reporting, with private profile contact as fallback
