@@ -524,9 +524,6 @@ impl DaemonHandle {
             protocol_version: ProtocolVersion::CURRENT,
             auth_token,
         };
-        write_discovery(&discovery_path, &discovery)?;
-        append_log(&config.runtime_directory.join("daemon.log"), "ready")?;
-
         let graph = Arc::new(
             ServiceGraph::new(handler, config.max_concurrency).map_err(DaemonError::Service)?,
         );
@@ -554,10 +551,14 @@ impl DaemonHandle {
         // The discovery file is intentionally written before spawning the accept loop so other
         // processes can locate the endpoint, but the first request can still race the thread's
         // listener initialization on macOS. Complete a read-only health handshake before
-        // reporting startup success; no mutating request is retried.
+        // publishing discovery or reporting startup success; no mutating request is retried.
         for attempt in 0..50 {
             match handle.call("health", Value::Null) {
-                Ok(_) => return Ok(handle),
+                Ok(_) => {
+                    write_discovery(&handle.discovery_path, &handle.discovery)?;
+                    append_log(&config.runtime_directory.join("daemon.log"), "ready")?;
+                    return Ok(handle);
+                }
                 Err(error) if is_startup_transport_race(&error) && attempt < 49 => {
                     thread::sleep(Duration::from_millis(10));
                 }
