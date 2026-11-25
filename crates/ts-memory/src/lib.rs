@@ -535,7 +535,7 @@ impl MemoryStore {
     /// Inserts or replaces multiple memories in one durable transaction.
     ///
     /// An empty batch is a no-op. If validation or insertion of any item fails,
-    /// SQLite rolls back the entire batch and no partial import is committed.
+    /// `SQLite` rolls back the entire batch and no partial import is committed.
     ///
     /// # Errors
     ///
