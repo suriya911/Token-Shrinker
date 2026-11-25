@@ -126,7 +126,7 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
         tool(
             "token_shrinker_task_update",
             "Task update",
-            "Create or update the project-local task ledger without sending data outside the workspace.",
+            "Create or update the project-local task ledger without sending data outside the workspace.\n\nMutation responses return the changed task and counts by status. Pass `verbose: true` only when the full task list is needed; `token_shrinker_task_status` remains the read-only full-ledger view.",
             object(
                 json!({
                     "root":{"type":"string"},

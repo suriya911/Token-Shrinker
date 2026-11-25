@@ -30,8 +30,7 @@ Read the project-local task ledger and current active task.
 
 Create or update the project-local task ledger without sending data outside the workspace.
 
-Mutation responses return the changed task and counts by status. Pass `verbose: true` only when
-the full task list is needed; `token_shrinker_task_status` remains the read-only full-ledger view.
+Mutation responses return the changed task and counts by status. Pass `verbose: true` only when the full task list is needed; `token_shrinker_task_status` remains the read-only full-ledger view.
 
 - Read only: `false`
 - Destructive: `false`
