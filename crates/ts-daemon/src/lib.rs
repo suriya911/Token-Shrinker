@@ -692,6 +692,10 @@ fn server_loop(
                 idle_polls = idle_polls.saturating_add(1);
                 thread::sleep(accept_backoff(idle_polls));
             }
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => {
+                // macOS can interrupt a nonblocking accept while the listener is
+                // otherwise healthy. Retry so a transient signal cannot stop the daemon.
+            }
             Err(_) => break,
         }
     }
