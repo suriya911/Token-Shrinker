@@ -81,13 +81,14 @@ jobs:
         run: node scripts/package-native.mjs --output release --profile release
 
       - name: Pack umbrella npm, SDK, and VSIX
-        if: matrix.primary
         shell: pwsh
         run: |
           pnpm --filter @token-shrinker/cli pack --pack-destination release
-          pnpm --filter @token-shrinker/sdk pack --pack-destination release
-          pnpm --filter ./packages/vscode package
-          Copy-Item packages/vscode/dist/token-shrinker.vsix release/token-shrinker.vsix
+            if ('${{ matrix.primary }}' -eq 'true') {
+              pnpm --filter @token-shrinker/sdk pack --pack-destination release
+              pnpm --filter ./packages/vscode package
+              Copy-Item packages/vscode/dist/token-shrinker.vsix release/token-shrinker.vsix
+            }
 
       - name: Generate CycloneDX SBOM
         if: matrix.sbom
@@ -141,3 +142,36 @@ jobs:
 
       - name: Verify provenance configuration
         run: node scripts/verify-release-provenance.mjs .github/workflows/release-candidate.yml
+
+  clean-install:
+    name: Clean install (${{ matrix.target }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x64
+          - os: macos-latest
+            target: macos-arm64
+          - os: ubuntu-latest
+            target: linux-x64-gnu
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+
+      - name: Download platform artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: token-shrinker-${{ matrix.target }}
+          path: release
+
+      - name: Verify clean install and uninstall
+        run: node scripts/verify-rc-install.mjs release
