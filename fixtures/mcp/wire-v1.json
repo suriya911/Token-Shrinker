@@ -699,6 +699,10 @@
           },
           "title": {
             "type": "string"
+          },
+          "verbose": {
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": [

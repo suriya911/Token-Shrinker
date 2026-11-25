@@ -135,7 +135,8 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
                     "title":{"type":"string"},
                     "description":{"type":"string"},
                     "notes":{"type":"string"},
-                    "agent":{"type":"string"}
+                    "agent":{"type":"string"},
+                    "verbose":{"type":"boolean","default":false}
                 }),
                 &["root", "action"],
             ),
@@ -644,6 +645,8 @@ struct TaskUpdateParams {
     description: Option<String>,
     notes: Option<String>,
     agent: Option<String>,
+    #[serde(default)]
+    verbose: bool,
 }
 
 #[derive(Deserialize)]
@@ -780,14 +783,26 @@ fn task_update(value: &Value) -> Result<Value, ServiceError> {
     };
     ledger.updated_at_unix_ms = now;
     write_task_ledger(&path, &ledger)?;
-    Ok(json!({
+    let mut response = json!({
         "created": !existed,
         "path": path,
         "schemaVersion": ledger.schema_version,
         "updatedAtUnixMs": ledger.updated_at_unix_ms,
         "task": task,
-        "tasks": ledger.tasks
-    }))
+        "counts": task_status_counts(&ledger),
+    });
+    if params.verbose {
+        response["tasks"] = json!(ledger.tasks);
+    }
+    Ok(response)
+}
+
+fn task_status_counts(ledger: &TaskLedger) -> Value {
+    let mut counts = BTreeMap::<String, usize>::new();
+    for task in &ledger.tasks {
+        *counts.entry(task.status.clone()).or_default() += 1;
+    }
+    json!(counts)
 }
 
 fn fetch_source(value: &Value) -> Result<Value, ServiceError> {
@@ -1252,6 +1267,18 @@ mod tests {
             )
             .expect("add");
         assert_eq!(added["data"]["task"]["status"], "todo");
+        assert_eq!(added["data"]["counts"]["todo"], 1);
+        assert!(added["data"].get("tasks").is_none());
+        let verbose = handler
+            .handle(
+                &request(
+                    "token_shrinker_task_update",
+                    json!({"root":directory.path(),"action":"ensure","verbose":true}),
+                ),
+                &AtomicBool::new(false),
+            )
+            .expect("verbose ensure");
+        assert_eq!(verbose["data"]["tasks"].as_array().expect("tasks").len(), 1);
         handler
             .handle(
                 &request(
