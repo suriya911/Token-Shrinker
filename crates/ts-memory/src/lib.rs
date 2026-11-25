@@ -527,29 +527,30 @@ impl MemoryStore {
     /// Returns [`MemoryError`] for invalid input or a `SQLite` failure.
     pub fn remember(&mut self, memory: &NewMemory) -> Result<(), MemoryError> {
         validate_memory(memory)?;
-        let (scope_kind, scope_key) = memory.scope.database_parts()?;
         let transaction = self.connection.transaction().map_err(MemoryError::Sqlite)?;
-        transaction
-            .execute(
-                "INSERT INTO memories (
-                    id, scope_kind, scope_key, content, created_at_ms, expires_at_ms
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                 ON CONFLICT(id) DO UPDATE SET
-                    scope_kind = excluded.scope_kind,
-                    scope_key = excluded.scope_key,
-                    content = excluded.content,
-                    created_at_ms = excluded.created_at_ms,
-                    expires_at_ms = excluded.expires_at_ms",
-                params![
-                    memory.id,
-                    scope_kind,
-                    scope_key,
-                    memory.content,
-                    memory.created_at_unix_ms,
-                    memory.expires_at_unix_ms
-                ],
-            )
-            .map_err(MemoryError::Sqlite)?;
+        insert_memory(&transaction, memory)?;
+        transaction.commit().map_err(MemoryError::Sqlite)
+    }
+
+    /// Inserts or replaces multiple memories in one durable transaction.
+    ///
+    /// An empty batch is a no-op. If validation or insertion of any item fails,
+    /// SQLite rolls back the entire batch and no partial import is committed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MemoryError`] for invalid input or a `SQLite` failure.
+    pub fn remember_many(&mut self, memories: &[NewMemory]) -> Result<(), MemoryError> {
+        for memory in memories {
+            validate_memory(memory)?;
+        }
+        if memories.is_empty() {
+            return Ok(());
+        }
+        let transaction = self.connection.transaction().map_err(MemoryError::Sqlite)?;
+        for memory in memories {
+            insert_memory(&transaction, memory)?;
+        }
         transaction.commit().map_err(MemoryError::Sqlite)
     }
 
@@ -664,10 +665,15 @@ impl MemoryStore {
 
 fn remember_on(connection: &mut Connection, memory: &NewMemory) -> Result<(), MemoryError> {
     validate_memory(memory)?;
-    let (scope_kind, scope_key) = memory.scope.database_parts()?;
     let transaction = connection
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(MemoryError::Sqlite)?;
+    insert_memory(&transaction, memory)?;
+    transaction.commit().map_err(MemoryError::Sqlite)
+}
+
+fn insert_memory(transaction: &Transaction<'_>, memory: &NewMemory) -> Result<(), MemoryError> {
+    let (scope_kind, scope_key) = memory.scope.database_parts()?;
     transaction
         .execute(
             "INSERT INTO memories (
@@ -689,7 +695,7 @@ fn remember_on(connection: &mut Connection, memory: &NewMemory) -> Result<(), Me
             ],
         )
         .map_err(MemoryError::Sqlite)?;
-    transaction.commit().map_err(MemoryError::Sqlite)
+    Ok(())
 }
 
 fn search_on(
@@ -1052,6 +1058,28 @@ mod tests {
             .expect("search memory");
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].id, "first");
+    }
+
+    #[test]
+    fn remember_many_commits_atomically_and_rejects_partial_batches() {
+        let mut store = MemoryStore::open_in_memory().expect("open memory store");
+        store
+            .remember_many(&[
+                memory("first", MemoryScope::User, "one", 1),
+                memory("second", MemoryScope::User, "two", 2),
+            ])
+            .expect("store batch");
+        assert_eq!(store.search(&MemoryScope::User, "", 3, 10).unwrap().len(), 2);
+
+        let mut invalid = memory("invalid", MemoryScope::User, "three", 3);
+        invalid.expires_at_unix_ms = Some(3);
+        assert!(store
+            .remember_many(&[
+                memory("third", MemoryScope::User, "three", 3),
+                invalid,
+            ])
+            .is_err());
+        assert_eq!(store.search(&MemoryScope::User, "", 4, 10).unwrap().len(), 2);
     }
 
     #[test]
