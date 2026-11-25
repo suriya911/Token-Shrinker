@@ -1069,17 +1069,22 @@ mod tests {
                 memory("second", MemoryScope::User, "two", 2),
             ])
             .expect("store batch");
-        assert_eq!(store.search(&MemoryScope::User, "", 3, 10).unwrap().len(), 2);
+        assert_eq!(
+            store.search(&MemoryScope::User, "", 3, 10).unwrap().len(),
+            2
+        );
 
         let mut invalid = memory("invalid", MemoryScope::User, "three", 3);
         invalid.expires_at_unix_ms = Some(3);
-        assert!(store
-            .remember_many(&[
-                memory("third", MemoryScope::User, "three", 3),
-                invalid,
-            ])
-            .is_err());
-        assert_eq!(store.search(&MemoryScope::User, "", 4, 10).unwrap().len(), 2);
+        assert!(
+            store
+                .remember_many(&[memory("third", MemoryScope::User, "three", 3), invalid,])
+                .is_err()
+        );
+        assert_eq!(
+            store.search(&MemoryScope::User, "", 4, 10).unwrap().len(),
+            2
+        );
     }
 
     #[test]
