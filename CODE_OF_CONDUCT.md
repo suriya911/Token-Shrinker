@@ -30,7 +30,7 @@ This policy applies in project repositories, issue trackers, reviews, discussion
 
 ## Reporting and enforcement
 
-Reports should be sent privately to `CODE_OF_CONDUCT_CONTACT_TBD`. This placeholder must be replaced with a monitored contact before public community participation begins. Until then, contact the repository owner privately through their GitHub profile. Do not publish sensitive conduct reports in an issue.
+Reports should be sent privately to [@suriya911 on GitHub](https://github.com/suriya911) by direct message. Do not publish sensitive conduct reports in an issue.
 
 Maintainers will protect reporter privacy as far as reasonably possible, avoid conflicts of interest, gather relevant context, and use proportionate responses. Possible actions include a private correction, warning, temporary participation limits, removal of content, temporary suspension, or permanent removal. Retaliation and repeated behavior increase severity.
 

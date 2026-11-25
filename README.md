@@ -2,9 +2,9 @@
 
 > A local-first, MCP-first token-optimization runtime for AI and LLM command-line agents.
 
-[![CI](https://img.shields.io/badge/CI-placeholder-lightgrey)](#continuous-integration)
-[![npm](https://img.shields.io/badge/npm-placeholder-lightgrey)](#installation)
-[![crates.io](https://img.shields.io/badge/crates.io-placeholder-lightgrey)](#installation)
+[![CI](https://github.com/suriya911/Token-Shrinker/actions/workflows/ci.yml/badge.svg)](https://github.com/suriya911/Token-Shrinker/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/%40token-shrinker%2Fcli?label=npm)](https://www.npmjs.com/package/@token-shrinker/cli)
+[![crates.io](https://img.shields.io/badge/crates.io-not_published-lightgrey)](#installation)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](#license)
 
 Token-Shrinker reduces the context and terminal output sent to an LLM while preserving the evidence needed to complete a task. It provides one local runtime for Claude Code, Codex CLI, Gemini CLI, OpenCode, Aider, editor extensions, and future MCP-capable agents.
