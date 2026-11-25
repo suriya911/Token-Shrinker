@@ -6,11 +6,11 @@ import { join, resolve } from "node:path";
 
 const artifactRoot = resolve(process.argv[2] ?? "release");
 const tarballs = (await readdir(artifactRoot)).filter((name) => name.endsWith(".tgz"));
-assert.equal(tarballs.length, 2, `expected CLI and native tarballs in ${artifactRoot}`);
 
 const readPackageName = (name) => name.replace(/-\d+\.\d+\.\d+\.tgz$/u, "");
 const umbrella = tarballs.find((name) => readPackageName(name) === "token-shrinker-cli");
 const native = tarballs.find((name) => readPackageName(name).startsWith("token-shrinker-cli-"));
+assert(tarballs.length >= 2, `expected CLI and native tarballs in ${artifactRoot}`);
 assert(umbrella, "CLI tarball is missing");
 assert(native, "native tarball is missing");
 

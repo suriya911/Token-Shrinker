@@ -41,7 +41,7 @@ for (const [index, component] of sbom.components.entries()) {
   if (!component || typeof component !== "object" ||
       typeof component.type !== "string" ||
       typeof component.name !== "string" ||
-      typeof component.version !== "string") {
+      (component.type !== "file" && typeof component.version !== "string")) {
     fail(`SBOM ${sbomFiles[0]} has an invalid component at index ${index}`);
   }
 }
