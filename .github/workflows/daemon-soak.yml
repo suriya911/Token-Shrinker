@@ -1,0 +1,47 @@
+name: Daemon soak evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_minutes:
+        description: "Soak duration; GitHub-hosted jobs are capped at 360 minutes"
+        required: true
+        default: "350"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daemon-soak
+  cancel-in-progress: false
+
+jobs:
+  soak:
+    name: Linux daemon soak (${{ inputs.duration_minutes }} minutes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Activate pinned Rust toolchain
+        run: rustup show active-toolchain
+
+      - name: Build release binary
+        run: cargo build --release --bin token-shrinker
+
+      - name: Run daemon soak
+        run: node scripts/run-daemon-soak.mjs
+        env:
+          TOKEN_SHRINKER_SOAK_MINUTES: ${{ inputs.duration_minutes }}
+          TOKEN_SHRINKER_SOAK_LOG: soak/daemon-soak.jsonl
+
+      - name: Upload soak evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: daemon-soak-evidence-${{ github.run_id }}
+          path: soak/daemon-soak.jsonl
+          if-no-files-found: warn
+          retention-days: 30
