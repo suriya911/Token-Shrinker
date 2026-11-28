@@ -61,11 +61,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
   );
 
-  try {
-    const capabilities = await getClient().then((value) => value.capabilities({ timeoutMs: 2_000 }));
-    status.text = statusLabel(capabilities);
-  } catch {
-    status.text = "Token-Shrinker: unavailable";
+  if (!vscode.workspace.isTrusted) {
+    status.text = "Token-Shrinker: workspace untrusted";
+  } else {
+    try {
+      const capabilities = await getClient().then((value) =>
+        value.capabilities({ timeoutMs: 2_000 }),
+      );
+      status.text = statusLabel(capabilities);
+    } catch {
+      status.text = "Token-Shrinker: unavailable";
+    }
   }
 }
 
