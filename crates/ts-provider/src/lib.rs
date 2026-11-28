@@ -692,7 +692,9 @@ mod tests {
             required: false,
             limits: ProviderLimits {
                 startup_timeout: Duration::from_millis(500),
-                operation_timeout: Duration::from_millis(100),
+                // Allow cold Python startup on slower clean machines while keeping the fixture
+                // short enough to exercise timeout and circuit-breaker behavior.
+                operation_timeout: Duration::from_millis(400),
                 max_response_bytes: 1_024,
                 failure_threshold: 2,
                 cooldown: Duration::from_mins(1),
