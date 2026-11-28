@@ -455,6 +455,19 @@ mod tests {
     }
 
     #[test]
+    fn installed_newer_version_never_offers_a_downgrade() {
+        let (manifest, keys) = signed_manifest();
+        let mut newer = query();
+        newer.installed_version = "9.9.9";
+
+        let report = check_update(&manifest, &keys, &newer).expect("valid update");
+        assert_eq!(report.available_version, None);
+        assert_eq!(report.action, None);
+        assert_eq!(report.artifact, None);
+        assert!(report.read_only);
+    }
+
+    #[test]
     fn tampering_expiry_source_and_protocol_mismatch_are_rejected() {
         let (manifest, keys) = signed_manifest();
         let mut tampered: CompatibilityManifest =
